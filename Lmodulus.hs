@@ -1,3 +1,10 @@
+--
+-- Parse Lmod JSON to Package representation:
+--
+-- $ /path/to/spider -o softwarePage /opt/modulefiles > lmod.json
+-- 
+-- (c) jonas.juselius@uit.no, 2013
+--
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lmodulus where
@@ -29,7 +36,7 @@ data Version = Version
     , helpText :: Maybe T.Text 
     } deriving (Eq, Show)
 
-newtype Packages = Packages [Package] deriving(Eq, Show)
+newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
 instance FromJSON Packages where
   parseJSON (Array a) = do
@@ -46,7 +53,6 @@ instance FromJSON Package where
         <*> o .:? "keywords" 
         <*> o .:? "url" 
         <*> o .: "displayName" 
---         <*> ((liftM V.toList) <$> V.mapM parseJSON v :: Parser ([Version]))
         <*> do  
             v <- o .: "versions" 
             (liftM V.toList) $ V.mapM parseJSON v :: Parser ([Version])
@@ -58,10 +64,25 @@ instance FromJSON Version where
         <*> o .: "full"
         <*> o .:? "help"
 
+toListHTML x = "<tr>" 
+        ++ "<td> " ++ nameOrURL ++ " </td>"
+        ++ "<td> " ++ T.unpack (defaultVersion x) ++ " </td>"
+        ++ "<td> " ++ T.unpack (description x) ++ " </td>"
+        ++ "</tr>"
+        where
+            nameOrURL = case url x of
+                Just u -> "<a href=" ++ T.unpack u ++ ">" 
+                    ++ T.unpack (name x) ++ "</a>"
+                otherwise -> T.unpack (name x)
+
 main = do
     args <- Env.getArgs
     ason <- BS.readFile (head args)
-    print $ (decode (ason) :: Maybe Packages)
+    putStrLn "<table>"
+    case (decode (ason) :: Maybe Packages) of
+        Just x -> putStrLn $ unlines (map toListHTML ((getPackages x)))
+        otherwise -> putStrLn "damn. failed."
+    putStrLn "</table>"
 --     print $ foo ason
 --     print $ (decode (ason) :: Maybe Value)
 
