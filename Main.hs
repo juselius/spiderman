@@ -6,11 +6,16 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
+-- TODO: filter on Category and Keywords
+--
 {-# LANGUAGE DeriveDataTypeable #-}
 import SoftwarePage
-import Lmodulus
+import Lmodulator
 import Data.Aeson
+import System.Directory
 import System.Console.CmdArgs
+import qualified Control.Exception as Except
+import qualified System.IO.Error as IO
 import qualified System.Environment as Env
 import qualified Data.ByteString.Lazy.Char8 as BS
 
@@ -25,16 +30,24 @@ flags = Flags {
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
-    &= summary "Lmodulus v1.0.0, (c) Henry H. Juxtapose" 
+    &= summary "Lmodulator v1.0.0, (c) Henry H. Juxtapose" 
 --     &= details ["Foo"]
 
 main = do
     args <- cmdArgs flags
     ason <- BS.readFile (inpfile args)
+    Except.catch (createDirectoryIfMissing True (outdir args)) handler
+    Except.catch (setCurrentDirectory (outdir args)) handler
     case (decode ason :: Maybe Packages) of
         Just x -> putStrLn $ unlines (map toListHTML (getPackages x))
         otherwise -> putStrLn "damn. failed."
 --     print $ foo ason
 --     print $ (decode (ason) :: Maybe Value)
 
-
+handler :: IO.IOError -> IO ()  
+handler e  
+    | IO.isDoesNotExistError e =    
+        putStrLn "The file or directory doesn't exist!"  
+    | IO.isPermissionError e = 
+        putStrLn "Permissions denied!"  
+    | otherwise = ioError e  

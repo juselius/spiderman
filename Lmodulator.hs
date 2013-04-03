@@ -7,7 +7,7 @@
 --
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lmodulus where
+module Lmodulator where
 
 import           Control.Applicative
 import           Control.Monad

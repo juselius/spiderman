@@ -3,7 +3,7 @@ module SoftwarePage (
     toListHTML
     ) where
 
-import Lmodulus 
+import Lmodulator 
 import           Control.Applicative
 import           Control.Monad
 import qualified Data.Text as T
