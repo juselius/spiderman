@@ -1,5 +1,7 @@
 
-module SoftwarePage where
+module SoftwarePage (
+    toListHTML
+    ) where
 
 import Lmodulus 
 import           Control.Applicative
