@@ -1,38 +1,46 @@
+--
+-- Generate HTML from Lmod Packages
+--
+-- (c) jonas.juselius@uit.no, 2013
+--
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
 module SoftwarePage (
-    toListHTML
+    toListingPage
     ) where
 
+import Control.Applicative
+import Control.Monad
 import Lmodulator 
-import           Control.Applicative
-import           Control.Monad
+import Text.Blaze.Html5 ((!))
+import Text.Blaze.Internal (text)
+import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
 
-nameOrURL :: Package -> String
-nameOrURL x = case url x of
-    Just u -> "<a href=" ++ T.unpack u ++ ">" 
-        ++ T.unpack (name x) ++ "</a>"
-    otherwise -> T.unpack (name x)
+nameOrURL :: Package -> H.Html
+nameOrURL x = let u = url x in
+    H.a ! A.href (H.toValue u) $ H.toHtml . name $ x
 
-
-extractText :: Maybe T.Text -> String
-extractText (Just t) = T.unpack t
-extractText _ = mzero
-
-getDefaultHelpText :: Package -> String
+getDefaultHelpText :: Package -> H.Html
 getDefaultHelpText x = 
     case HM.lookup (defaultVersion x) (versions x) of
-        Just v -> 
-            "<a href=" ++ extractText (helpText v) ++ ">" 
-            ++ T.unpack (name x) ++ "</a>"
-        otherwise -> mzero
+    Just v -> H.a . H.toHtml . helpText $ v
+    otherwise -> text ""
 
-toListHTML x = "<tr>" 
-        ++ "<td> " ++ nameOrURL x ++ " </td>"
-        ++ "<td> " ++ extractText (keywords x) ++ " </td>"
-        ++ "<td> " ++ T.unpack (defaultVersion x) ++ " </td>"
-        ++ "<td> " ++ T.unpack (description x) ++ " </td>"
-        ++ "<td> " ++ getDefaultHelpText x ++ " </td>"
-        ++ "</tr>"
+toListingPage :: [Package] -> H.Html
+toListingPage x = H.docTypeHtml $ do
+    H.head $ do 
+        H.title "Packages"
+    H.body $ do
+        H.table $ H.span ! A.class_ "pTable" $ forM_ x toTableRow
 
+toTableRow :: Package -> H.Html
+toTableRow x = H.tr $ H.span ! A.class_ "rRow" $ do 
+    H.td . nameOrURL $ x
+    H.td . H.toHtml . keywords $ x
+    H.td . H.toHtml . defaultVersion $ x
+    H.td . H.toHtml . description $ x
+--     H.td . H.toHtml . getDefaultHelpText $ x
+        

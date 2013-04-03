@@ -8,12 +8,13 @@
 --
 -- TODO: filter on Category and Keywords
 --
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 import SoftwarePage
 import Lmodulator
 import Data.Aeson
 import System.Directory
 import System.Console.CmdArgs
+import Text.Blaze.Html.Renderer.Pretty
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
 import qualified System.Environment as Env
@@ -39,7 +40,8 @@ main = do
     Except.catch (createDirectoryIfMissing True (outdir args)) handler
     Except.catch (setCurrentDirectory (outdir args)) handler
     case (decode ason :: Maybe Packages) of
-        Just x -> putStrLn $ unlines (map toListHTML (getPackages x))
+--         Just x -> putStrLn $ unlines (map toListHTML (getPackages x))
+        Just x -> putStrLn . renderHtml . toListingPage . getPackages $ x
         otherwise -> putStrLn "damn. failed."
 --     print $ foo ason
 --     print $ (decode (ason) :: Maybe Value)

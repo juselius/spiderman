@@ -20,11 +20,11 @@ import qualified Data.Vector as V
 
 data Package = Package 
     { name :: T.Text
-    , categories  :: Maybe T.Text
+    , categories  :: T.Text
     , defaultVersion :: T.Text
     , description :: T.Text
-    , keywords :: Maybe T.Text
-    , url :: Maybe T.Text
+    , keywords :: T.Text
+    , url :: T.Text
     , displayName :: T.Text
     , versions :: HM.HashMap T.Text Version
     } deriving (Eq, Show)
@@ -32,7 +32,7 @@ data Package = Package
 data Version = Version 
     { version :: T.Text
     , fullName :: T.Text
-    , helpText :: Maybe T.Text 
+    , helpText :: T.Text 
     } deriving (Eq, Show)
 
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
@@ -46,11 +46,11 @@ instance FromJSON Packages where
 instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
-        <*> o .:? "categories" 
+        <*> o .:? "categories" .!= ""
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> o .:? "keywords" 
-        <*> o .:? "url" 
+        <*> o .:? "keywords" .!= ""
+        <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
             v <- o .: "versions" 
@@ -63,5 +63,5 @@ instance FromJSON Version where
     parseJSON (Object o) = 
         Version <$> o .: "versionName"
         <*> o .: "full"
-        <*> o .:? "help"
+        <*> o .:? "help" .!= ""
 
