@@ -17,7 +17,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import qualified System.Environment as Env
 
 data Package = Package 
     { name :: T.Text
@@ -65,43 +64,4 @@ instance FromJSON Version where
         Version <$> o .: "versionName"
         <*> o .: "full"
         <*> o .:? "help"
-
-nameOrURL :: Package -> String
-nameOrURL x = case url x of
-    Just u -> "<a href=" ++ T.unpack u ++ ">" 
-        ++ T.unpack (name x) ++ "</a>"
-    otherwise -> T.unpack (name x)
-
-
-extractText :: Maybe T.Text -> String
-extractText (Just t) = T.unpack t
-extractText _ = mzero
-
-getDefaultHelpText :: Package -> String
-getDefaultHelpText x = 
-    case HM.lookup (defaultVersion x) (versions x) of
-        Just v -> 
-            "<a href=" ++ extractText (helpText v) ++ ">" 
-            ++ T.unpack (name x) ++ "</a>"
-        otherwise -> mzero
-
-toListHTML x = "<tr>" 
-        ++ "<td> " ++ nameOrURL x ++ " </td>"
-        ++ "<td> " ++ extractText (keywords x) ++ " </td>"
-        ++ "<td> " ++ T.unpack (defaultVersion x) ++ " </td>"
-        ++ "<td> " ++ T.unpack (description x) ++ " </td>"
-        ++ "<td> " ++ getDefaultHelpText x ++ " </td>"
-        ++ "</tr>"
-
-main = do
-    args <- Env.getArgs
-    ason <- BS.readFile (head args)
-    putStrLn "<table>"
-    case (decode ason :: Maybe Packages) of
-        Just x -> putStrLn $ unlines (map toListHTML (getPackages x))
-        otherwise -> putStrLn "damn. failed."
-    putStrLn "</table>"
---     print $ foo ason
---     print $ (decode (ason) :: Maybe Value)
-
 
