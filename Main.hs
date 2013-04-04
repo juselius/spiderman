@@ -55,8 +55,6 @@ mkPackagePages pkgs = do
     writeFile "index.html" $ renderListingsPage pkgs
     mapM_ mkVersionPage pkgs
     mapM_ mkHelpPages pkgs
---     writeFile "help.html" $ 
---         renderHelpPage . snd . head . HM.toList . versions . head $ pkgs
 
 mkVersionPage :: Package -> IO ()
 mkVersionPage p = 
@@ -67,7 +65,6 @@ mkHelpPages p =
     mapM_ (\v -> 
         writeFile (toHtmlFileName $ fullName v) $ renderHelpPage v) 
         (HM.elems $ versions p)
-    
 
 renderListingsPage pkgs = renderHtml . toListingPage "Packages" $ pkgs
 
