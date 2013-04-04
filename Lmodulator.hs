@@ -71,4 +71,4 @@ instance FromJSON Version where
         <*> o .: "full"
         <*> o .:? "help" .!= ""
 
-unspace = T.pack . filter (/=' ') . T.unpack
+unspace = T.filter (/=' ') 
