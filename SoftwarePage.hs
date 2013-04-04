@@ -1,10 +1,9 @@
 --
--- Generate HTML from Lmod Packages
---
 -- (c) jonas.juselius@uit.no, 2013
 --
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
+-- | Generate HTML from Lmod(ualtor) Packages.
 module SoftwarePage (
       toListingPage
     , toVersionPage
@@ -31,6 +30,7 @@ getDefaultHelpText x =
     Just v -> H.a . H.toHtml . helpText $ v
     otherwise -> text ""
 
+-- | Generate a standalone html page from a body
 toPage :: String -> H.Html -> H.Html
 toPage t b = H.docTypeHtml $ do
     H.head $ do 
@@ -38,15 +38,20 @@ toPage t b = H.docTypeHtml $ do
         H.link ! A.href "lmod.css" ! A.rel "stylesheet" ! A.type_ "text/css"
     H.body b 
 
+-- | Generate a Package table from a list of packages w/ a title
 toListingPage :: String -> [Package] -> H.Html
 toListingPage t p = toPage t  $ do
+        H.h1 . H.toHtml $ t
         H.table $ H.span ! A.class_ "listing_table" $ forM_ sortP toListingRow
     where sortP = sortBy (compare `on` T.toLower . displayName) p
 
+-- | Pick out a non-failing value from a Maybe
 extract (Just x) = x
 
+-- | Fetch the default Version object from a package
 getDefaultVersion p = extract $ HM.lookup (defaultVersion p) (versions p)
 
+-- | Generate a Package row in the listing table
 toListingRow :: Package -> H.Html
 toListingRow x = H.tr $ do 
     H.td $ name
@@ -66,12 +71,14 @@ toListingRow x = H.tr $ do
         ver = H.a ! A.href (H.toValue . toHtmlFileName . package $ x) $ 
             H.toHtml $ defaultVersion $ x
         
+-- | Create a version page for a package 
 toVersionPage :: Package -> H.Html
 toVersionPage p = toPage (T.unpack . displayName $ p)  $ do
     H.h1 . H.toHtml . displayName $ p
     H.table $ H.span ! A.class_ "version_table" $ 
         forM_ (HM.elems $ versions p) toVersionRow 
 
+-- | Make a version infomation row for a version page
 toVersionRow v = H.tr $ do 
     H.td $ H.toHtml vv
     H.td $ H.a ! A.href (H.toValue $ toHtmlFileName fn) $ 
@@ -80,16 +87,19 @@ toVersionRow v = H.tr $ do
         vv = version v
         fn = fullName v
 
+-- | Generate a help page for a package version
 toHelpPage :: Version -> H.Html
 toHelpPage v = toPage (T.unpack t)  $ do
     H.h1 . H.toHtml $ t
     H.div ! A.class_ "help_page" $ H.toHtml . helpText $ v
     where t = cleanPath . fullName $ v
             
--- | Remove first part, up until first '/' 
+-- | Remove first part of a package path, up until first '/' 
 cleanPath x 
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
+-- | Convert a package/version path to a usable url name
 toHtmlFileName p =  
     (T.unpack . T.toLower . T.replace "/" "_"  $ p)  ++ ".html"
+

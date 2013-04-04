@@ -1,12 +1,13 @@
---
--- Parse Lmod JSON to Package representation:
---
--- $ /path/to/spider -o softwarePage /opt/modulefiles > lmod.json
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Parse Lmod JSON into more Haskell types.
+--
+-- The JSON can be generated from Lmod with:
+--
+-- @ $ \/path\/to\/spider -o softwarePage \/opt\/modulefiles > lmod.json@
 module Lmodulator where
 
 import           Control.Applicative
@@ -18,6 +19,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
+-- | Lmod package representation
 data Package = Package 
     { package :: T.Text
     , category  :: T.Text
@@ -29,12 +31,14 @@ data Package = Package
     , versions :: HM.HashMap T.Text Version
     } deriving (Eq, Show)
  
+-- | Package version representation
 data Version = Version 
     { version :: T.Text
     , fullName :: T.Text
     , helpText :: T.Text 
     } deriving (Eq, Show)
 
+-- | Packages are packages.
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
 instance FromJSON Packages where

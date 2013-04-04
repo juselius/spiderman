@@ -6,7 +6,8 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
--- TODO: filter on Category and Keywords
+-- TODO: * filter on Category and Keywords
+--       * pandoc
 --
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 import SoftwarePage
@@ -30,11 +31,17 @@ data Flags = Flags {
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
     , inpfile = def &= argPos 0 &= typFile
+--     , category = def &= argPos 0 &= typFile
+--     , keyword = def &= argPos 0 &= typFile
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
     &= summary "Lmodulator v1.0.0, (c) Henry H. Juxtapose" 
-    &= details ["Create the appropriate JSON file with spider -o softwarePage"]
+    &= details [
+         "Process JSON into a HTML tree."
+        ,"Create the appropriate JSON file using the 'runspider.sh' script."
+        , ""
+        ]
 
 dirname args  
     | null $ outdir args = fst . splitExtension . inpfile $ args 
