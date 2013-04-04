@@ -6,9 +6,6 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
--- TODO: * filter on Category and Keywords
---       * pandoc
---
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 import SoftwarePage
 import Data.Aeson
@@ -87,8 +84,7 @@ filterCategory x
 
 filterKeyword x 
     | null x = id
-    | otherwise = filter $ 
-        (\y -> any (== (T.toLower . T.pack) x) $ L.keywords y) 
+    | otherwise = filter $ elem ((T.toLower . T.pack) x) . L.keywords
 
 getPackages :: BS.ByteString -> IO [L.Package]
 getPackages ason =
@@ -104,12 +100,12 @@ mkHtmlPackagePages t pkgs = do
 
 mkHtmlVersionPage :: L.Package -> IO ()
 mkHtmlVersionPage p = 
-    writeFile ((toLinkName $ L.package p) ++ ".html") $ renderVersionPage p
+    writeFile (toLinkName (L.package p) ++ ".html") $ renderVersionPage p
 
 mkHtmlHelpPages :: L.Package -> IO ()
 mkHtmlHelpPages p = 
     mapM_ (\v -> 
-        writeFile ((toLinkName $ L.fullName v) ++ ".html") $ renderHelpPage v) 
+        writeFile (toLinkName (L.fullName v) ++ ".html") $ renderHelpPage v) 
         (HM.elems $ L.versions p)
 
 mkRstPackagePages :: String -> [L.Package] -> IO ()
@@ -121,13 +117,13 @@ mkRstPackagePages t pkgs = do
 
 mkRstVersionPage :: L.Package -> IO ()
 mkRstVersionPage p = 
-    writeFile ((toLinkName $ L.package p) ++ ".rst") $ 
+    writeFile (toLinkName  (L.package p) ++ ".rst") $ 
         htmlToRst . renderVersionPage $ p
 
 mkRstHelpPages :: L.Package -> IO ()
 mkRstHelpPages p = 
     mapM_ (\v -> 
-        writeFile ((toLinkName $ L.fullName v) ++ ".rst") $ 
+        writeFile (toLinkName (L.fullName v) ++ ".rst") $ 
             htmlToRst . renderHelpPage $ v) 
         (HM.elems $ L.versions p)
 

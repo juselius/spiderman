@@ -50,12 +50,10 @@ instance FromJSON Packages where
 instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
-        <*> ((o .:? "categories" .!= "") >>=
-            (\x -> return $ T.toLower x))
+        <*> liftM T.toLower (o .:? "categories" .!= "") 
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> ((o .:? "keywords" .!= "") >>= 
-            (\x -> return $ T.splitOn "," . T.toLower $ x))
+        <*> liftM (T.splitOn "," . T.toLower) (o .:? "keywords" .!= "") 
         <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
