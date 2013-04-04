@@ -11,12 +11,12 @@
 --
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 import SoftwarePage
-import Lmodulator
 import Data.Aeson
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
 import Text.Blaze.Html.Renderer.Pretty
+import qualified Lmodulator as L
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
 import qualified System.Environment as Env
@@ -24,15 +24,21 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.HashMap.Strict as HM
 
 data Flags = Flags {
-    outdir :: FilePath,
-    inpfile :: FilePath
+      outdir :: FilePath
+    , inpfile :: FilePath
+    , category :: String 
+    , keyword :: String
+    , rst :: Bool
     } deriving (Data, Typeable, Show, Eq)
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
     , inpfile = def &= argPos 0 &= typFile
---     , category = def &= argPos 0 &= typFile
---     , keyword = def &= argPos 0 &= typFile
+    , category = "" &= typ "CATEGORY" &= 
+        help "Generate pages only for CATEGORY"
+    , keyword = "" &= typ "KEYWORD" &= 
+        help "Generate pages for KEYWORD"
+    , rst = def  &= help "Generate reStructuredText"
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
@@ -52,26 +58,50 @@ main = do
     ason <- BS.readFile (inpfile args)
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
-    case (decode ason :: Maybe Packages) of
-        Just x -> mkPackagePages $ getPackages x
+    if rst args then 
+        genFiles mkRstPackagePages ason 
+    else 
+        genFiles mkHtmlPackagePages ason
+
+genFiles pageGen ason =
+    case (decode ason :: Maybe L.Packages) of
+        Just x -> pageGen $ L.getPackages x
         otherwise -> putStrLn "damn. failed."
---     print $ (decode (ason) :: Maybe Value)
 
-mkPackagePages :: [Package] -> IO ()
-mkPackagePages pkgs = do
+mkHtmlPackagePages :: [L.Package] -> IO ()
+mkHtmlPackagePages pkgs = do
     writeFile "index.html" $ renderListingsPage pkgs
-    mapM_ mkVersionPage pkgs
-    mapM_ mkHelpPages pkgs
+    mapM_ mkHtmlVersionPage pkgs
+    mapM_ mkHtmlHelpPages pkgs
 
-mkVersionPage :: Package -> IO ()
-mkVersionPage p = 
-    writeFile (toHtmlFileName $ package p) $ renderVersionPage p
+mkHtmlVersionPage :: L.Package -> IO ()
+mkHtmlVersionPage p = 
+    writeFile ((toLinkName $ L.package p) ++ ".html") $ renderVersionPage p
 
-mkHelpPages :: Package -> IO ()
-mkHelpPages p = 
+mkHtmlHelpPages :: L.Package -> IO ()
+mkHtmlHelpPages p = 
     mapM_ (\v -> 
-        writeFile (toHtmlFileName $ fullName v) $ renderHelpPage v) 
-        (HM.elems $ versions p)
+        writeFile ((toLinkName $ L.fullName v) ++ ".html") $ renderHelpPage v) 
+        (HM.elems $ L.versions p)
+
+mkRstPackagePages :: [L.Package] -> IO ()
+mkRstPackagePages pkgs = do
+    writeFile "index.rst" $ 
+        htmlToRst . renderListingsPage $ pkgs
+    mapM_ mkRstVersionPage pkgs
+    mapM_ mkRstHelpPages pkgs
+
+mkRstVersionPage :: L.Package -> IO ()
+mkRstVersionPage p = 
+    writeFile ((toLinkName $ L.package p) ++ ".rst") $ 
+        htmlToRst . renderVersionPage $ p
+
+mkRstHelpPages :: L.Package -> IO ()
+mkRstHelpPages p = 
+    mapM_ (\v -> 
+        writeFile ((toLinkName $ L.fullName v) ++ ".rst") $ 
+            htmlToRst . renderHelpPage $ v) 
+        (HM.elems $ L.versions p)
 
 renderListingsPage pkgs = renderHtml . toListingPage "Packages" $ pkgs
 
