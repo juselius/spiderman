@@ -19,11 +19,11 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 
 data Package = Package 
-    { name :: T.Text
-    , categories  :: T.Text
+    { package :: T.Text
+    , category  :: T.Text
     , defaultVersion :: T.Text
     , description :: T.Text
-    , keywords :: T.Text
+    , keywords :: [T.Text]
     , url :: T.Text
     , displayName :: T.Text
     , versions :: HM.HashMap T.Text Version
@@ -49,7 +49,9 @@ instance FromJSON Package where
         <*> o .:? "categories" .!= ""
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> o .:? "keywords" .!= ""
+        <*> do
+            ks <- o .:? "keywords" .!= ""
+            return $ T.splitOn "," ks
         <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
