@@ -49,9 +49,7 @@ instance FromJSON Package where
         <*> o .:? "categories" .!= ""
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> do
-            ks <- o .:? "keywords" .!= ""
-            return $ T.splitOn "," ks
+        <*> ((o .:? "keywords" .!= "") >>= (\x -> return $ T.splitOn "," x))
         <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
