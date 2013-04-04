@@ -7,6 +7,7 @@
 -- (c) jonas.juselius@uit.no, 2013
 --
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
+
 import SoftwarePage
 import Data.Aeson
 import Data.Char
@@ -85,6 +86,8 @@ filterCategory x
 filterKeyword x 
     | null x = id
     | otherwise = filter $ elem ((T.toLower . T.pack) x) . L.keywords
+
+printKeyword = fmap print $ map L.keywords
 
 getPackages :: BS.ByteString -> IO [L.Package]
 getPackages ason =

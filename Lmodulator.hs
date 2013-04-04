@@ -13,6 +13,7 @@ module Lmodulator where
 import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson
+import           Data.List
 import           Data.Aeson.Types
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
@@ -53,7 +54,8 @@ instance FromJSON Package where
         <*> liftM T.toLower (o .:? "categories" .!= "") 
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> liftM (T.splitOn "," . T.toLower) (o .:? "keywords" .!= "") 
+        <*> liftM (T.splitOn "," . unspace . T.toLower) 
+            (o .:? "keywords" .!= "") 
         <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
@@ -69,3 +71,4 @@ instance FromJSON Version where
         <*> o .: "full"
         <*> o .:? "help" .!= ""
 
+unspace = T.pack . filter (/=' ') . T.unpack
