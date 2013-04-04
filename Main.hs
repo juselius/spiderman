@@ -12,6 +12,7 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 import SoftwarePage
 import Data.Aeson
+import Data.Char
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
@@ -22,11 +23,12 @@ import qualified System.IO.Error as IO
 import qualified System.Environment as Env
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Text as T
 
 data Flags = Flags {
       outdir :: FilePath
     , inpfile :: FilePath
-    , category :: String 
+    , category :: String
     , keyword :: String
     , rst :: Bool
     } deriving (Data, Typeable, Show, Eq)
@@ -58,19 +60,45 @@ main = do
     ason <- BS.readFile (inpfile args)
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
-    if rst args then 
-        genFiles mkRstPackagePages ason 
-    else 
-        genFiles mkHtmlPackagePages ason
+    pkgs <- getPackages ason
+    let 
+        p = filterCategory (category args) . filterKeyword (keyword args) $ 
+            pkgs 
+        t = titulator (category args, keyword args) in
+            if rst args then 
+                mkRstPackagePages t p 
+            else 
+                mkHtmlPackagePages t p
 
-genFiles pageGen ason =
+titulator (a, b) 
+    | a' == "development" = "Development " ++ p ++ kw
+    | a' == "library" = "Libraries" ++ kw
+    | a' == "compiler" = "Compilers" ++ kw
+    | a' == "application" = "Applications" ++ kw
+    | otherwise = p ++ kw
+    where 
+        a' = map toLower a
+        p = "Packages"
+        kw = if null b then "" else ": " ++ b
+
+filterCategory x 
+    | null x = id
+    | otherwise = filter (\y -> (T.toLower . L.category) y == T.pack x) 
+
+filterKeyword x 
+    | null x = id
+    | otherwise = filter $ 
+        (\y -> any (== (T.toLower . T.pack) x) $ L.keywords y) 
+
+getPackages :: BS.ByteString -> IO [L.Package]
+getPackages ason =
     case (decode ason :: Maybe L.Packages) of
-        Just x -> pageGen $ L.getPackages x
-        otherwise -> putStrLn "damn. failed."
+        Just x -> return $ L.getPackages x
+        otherwise -> return []
 
-mkHtmlPackagePages :: [L.Package] -> IO ()
-mkHtmlPackagePages pkgs = do
-    writeFile "index.html" $ renderListingsPage pkgs
+mkHtmlPackagePages :: String -> [L.Package] -> IO ()
+mkHtmlPackagePages t pkgs = do
+    writeFile "index.html" $ renderListingsPage t pkgs
     mapM_ mkHtmlVersionPage pkgs
     mapM_ mkHtmlHelpPages pkgs
 
@@ -84,10 +112,10 @@ mkHtmlHelpPages p =
         writeFile ((toLinkName $ L.fullName v) ++ ".html") $ renderHelpPage v) 
         (HM.elems $ L.versions p)
 
-mkRstPackagePages :: [L.Package] -> IO ()
-mkRstPackagePages pkgs = do
+mkRstPackagePages :: String -> [L.Package] -> IO ()
+mkRstPackagePages t pkgs = do
     writeFile "index.rst" $ 
-        htmlToRst . renderListingsPage $ pkgs
+        htmlToRst . renderListingsPage t $ pkgs
     mapM_ mkRstVersionPage pkgs
     mapM_ mkRstHelpPages pkgs
 
@@ -103,7 +131,7 @@ mkRstHelpPages p =
             htmlToRst . renderHelpPage $ v) 
         (HM.elems $ L.versions p)
 
-renderListingsPage pkgs = renderHtml . toListingPage "Packages" $ pkgs
+renderListingsPage t pkgs = renderHtml . toListingPage t $ pkgs
 
 renderVersionPage p = renderHtml . toVersionPage $ p
 

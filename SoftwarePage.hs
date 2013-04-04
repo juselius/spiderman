@@ -57,9 +57,9 @@ getDefaultVersion p = extract $ HM.lookup (defaultVersion p) (versions p)
 -- | Generate a Package row in the listing table
 toListingRow :: Package -> H.Html
 toListingRow x = H.tr $ do 
-    H.td $ name
-    H.td $ pkg
-    H.td $ ver
+    H.td name
+    H.td pkg
+    H.td ver
     H.td . H.toHtml . T.intercalate "," . keywords $ x
     H.td . H.toHtml . description $ x
     where 
@@ -72,7 +72,7 @@ toListingRow x = H.tr $ do
                     . fullName . getDefaultVersion $ x) $ 
                     H.toHtml $ reverse p
         ver = H.a ! A.href (H.toValue . toHtmlLinkName . package $ x) $ 
-            H.toHtml $ defaultVersion $ x
+            H.toHtml $ defaultVersion x
         
 -- | Create a version page for a package 
 toVersionPage :: Package -> H.Html
@@ -85,7 +85,7 @@ toVersionPage p = toPage (T.unpack . displayName $ p)  $ do
 toVersionRow v = H.tr $ do 
     H.td $ H.toHtml vv
     H.td $ H.a ! A.href (H.toValue $ toHtmlLinkName fn) $ 
-        H.toHtml $ cleanPath $ fn
+        H.toHtml $ cleanPath fn
     where 
         vv = version v
         fn = fullName v
@@ -109,7 +109,7 @@ toLinkName =
 
 toHtmlLinkName p = toLinkName p ++ ".html" 
 
-rstToHtml =  (P.writeHtml P.def) . P.readRST P.def 
+rstToHtml =  P.writeHtml P.def . P.readRST P.def 
 
-htmlToRst =  (P.writeRST P.def) . P.readHtml P.def 
+htmlToRst =  P.writeRST P.def . P.readHtml P.def 
 
