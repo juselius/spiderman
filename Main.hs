@@ -20,6 +20,7 @@ import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
 import qualified System.Environment as Env
 import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.HashMap.Strict as HM
 
 data Flags = Flags {
     outdir :: FilePath,
@@ -45,11 +46,34 @@ main = do
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
     case (decode ason :: Maybe Packages) of
---         Just x -> putStrLn $ unlines (map toListHTML (getPackages x))
-        Just x -> putStrLn . renderHtml . toListingPage . getPackages $ x
+        Just x -> mkPackagePages $ getPackages x
         otherwise -> putStrLn "damn. failed."
---     print $ foo ason
 --     print $ (decode (ason) :: Maybe Value)
+
+mkPackagePages :: [Package] -> IO ()
+mkPackagePages pkgs = do
+    writeFile "index.html" $ renderListingsPage pkgs
+    mapM_ mkVersionPage pkgs
+    mapM_ mkHelpPages pkgs
+--     writeFile "help.html" $ 
+--         renderHelpPage . snd . head . HM.toList . versions . head $ pkgs
+
+mkVersionPage :: Package -> IO ()
+mkVersionPage p = 
+    writeFile (toHtmlFileName $ package p) $ renderVersionPage p
+
+mkHelpPages :: Package -> IO ()
+mkHelpPages p = 
+    mapM_ (\v -> 
+        writeFile (toHtmlFileName $ fullName v) $ renderHelpPage v) 
+        (HM.elems $ versions p)
+    
+
+renderListingsPage pkgs = renderHtml . toListingPage "Packages" $ pkgs
+
+renderVersionPage p = renderHtml . toVersionPage $ p
+
+renderHelpPage v = renderHtml . toHelpPage $ v
 
 handler :: IO.IOError -> IO ()  
 handler e  
