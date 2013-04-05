@@ -5,9 +5,9 @@
 
 -- | Generate HTML from Lmod(ualtor) Packages.
 module SoftwarePage (
-      toListingPage
-    , toVersionPage
-    , toHelpPage
+      renderListingPage
+    , renderVersionPage
+    , renderHelpPage
     , toLinkName
     , rstToHtml
     , htmlToRst
@@ -21,6 +21,7 @@ import Data.Char
 import Data.Function (on)
 import Text.Blaze.Html5 ((!))
 import Text.Blaze.Internal (text)
+import Text.Blaze.Html.Renderer.Pretty 
 import qualified Text.Pandoc as P
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -34,7 +35,7 @@ getDefaultHelpText x =
     otherwise -> text ""
 
 -- | Generate a standalone html page from a body
-toPage :: String -> H.Html -> H.Html
+toPage :: T.Text -> H.Html -> H.Html
 toPage t b = H.docTypeHtml $ do
     H.head $ do 
         H.title (H.toHtml t)
@@ -42,10 +43,11 @@ toPage t b = H.docTypeHtml $ do
     H.body b 
 
 -- | Generate a Package table from a list of packages w/ a title
-toListingPage :: String -> [Package] -> H.Html
+toListingPage :: T.Text -> [Package] -> H.Html
 toListingPage t p = toPage t  $ do
         H.h1 . H.toHtml $ t
-        H.table $ H.span ! A.class_ "listing_table" $ forM_ sortP toListingRow
+        H.table $ -- ! A.class_ "listing_table" $ 
+            forM_ sortP toListingRow
     where sortP = sortBy (compare `on` T.toLower . displayName) p
 
 -- | Pick out a non-failing value from a Maybe
@@ -60,31 +62,32 @@ toListingRow x = H.tr $ do
     H.td name
     H.td pkg
     H.td ver
-    H.td . H.toHtml . T.intercalate "," . keywords $ x
-    H.td . H.toHtml . description $ x
+    H.td . H.toHtml . T.intercalate ", " . keywords $ x
+    H.td desc 
     where 
         name = H.a ! A.href (H.toValue . url $ x) $ H.toHtml . displayName $ x
         pkg = let p = takeWhile (/='/') . reverse . T.unpack . package $ x in
             if null p then 
                 "" 
             else 
-                H.a ! A.href (H.toValue . toHtmlLinkName 
+                H.a ! A.href (H.toValue . toLinkName 
                     . fullName . getDefaultVersion $ x) $ 
                     H.toHtml $ reverse p
-        ver = H.a ! A.href (H.toValue . toHtmlLinkName . package $ x) $ 
+        ver = H.a ! A.href (H.toValue . toLinkName . package $ x) $ 
             H.toHtml $ defaultVersion x
+        desc = H.toHtml . T.take 60 . description $ x
         
 -- | Create a version page for a package 
 toVersionPage :: Package -> H.Html
-toVersionPage p = toPage (T.unpack . displayName $ p)  $ do
-    H.h1 . H.toHtml . displayName $ p
-    H.table $ H.span ! A.class_ "version_table" $ 
+toVersionPage p = toPage (displayName p) $ do
+    H.h1 . H.toHtml $ T.append "Package " (displayName p)
+    H.table $ -- H.span ! A.class_ "version_table" $ 
         forM_ (HM.elems $ versions p) toVersionRow 
 
 -- | Make a version infomation row for a version page
 toVersionRow v = H.tr $ do 
     H.td $ H.toHtml vv
-    H.td $ H.a ! A.href (H.toValue $ toHtmlLinkName fn) $ 
+    H.td $ H.a ! A.href (H.toValue $ toLinkName fn) $ 
         H.toHtml $ cleanPath fn
     where 
         vv = version v
@@ -92,9 +95,9 @@ toVersionRow v = H.tr $ do
 
 -- | Generate a help page for a package version
 toHelpPage :: Version -> H.Html
-toHelpPage v = toPage (T.unpack t)  $ do
-    H.h1 . H.toHtml $ t
-    H.div ! A.class_ "help_page" $ 
+toHelpPage v = toPage t $ do
+    H.h1 . H.toHtml $ T.append "Module " t
+    H.div $ -- ! A.class_ "help_page" $ 
         H.toHtml . rstToHtml . T.unpack . helpText $ v
     where t = cleanPath . fullName $ v
             
@@ -103,13 +106,32 @@ cleanPath x
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
--- | Convert a package/version path to a usable url name
-toLinkName =  
-    T.unpack . T.toLower . T.replace "/" "_"  
+gititMeta t = "---\ntoc: no\ntitle: " ++ t ++ "\n...\n\n"
 
-toHtmlLinkName p = toLinkName p ++ ".html" 
+-- | Generate gitit rst pages w/ appropriate metatags
+toGititListingPage t p = 
+    (gititMeta t) ++ (htmlToRst $ renderListingPage t p)
+
+-- | Generate gitit rst pages w/ appropriate metatags
+toGititVersionPage p = id
+
+-- | Generate gitit rst pages w/ appropriate metatags
+toGititHelPage v = id
+
+-- | Convert a package/version path to a usable url name
+toLinkName :: T.Text -> T.Text
+toLinkName = T.toLower . T.replace "/" "."  
+
+toHtmlLinkName :: T.Text -> T.Text
+toHtmlLinkName p = toLinkName p `T.append` ".html"
 
 rstToHtml =  P.writeHtml P.def . P.readRST P.def 
 
 htmlToRst =  P.writeRST P.def . P.readHtml P.def 
+
+renderListingPage t pkgs = renderHtml . toListingPage (T.pack t) $ pkgs
+
+renderVersionPage p = renderHtml . toVersionPage $ p
+
+renderHelpPage v = renderHtml . toHelpPage $ v
 

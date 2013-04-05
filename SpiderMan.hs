@@ -15,7 +15,6 @@ import Data.List
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
-import Text.Blaze.Html.Renderer.Pretty
 import qualified Lmodulator as L
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
@@ -70,6 +69,7 @@ main = do
                 mkHtmlPackagePages t p
 
 titulator (a, b) 
+    | null a = p ++ kw
     | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
     | a' `isPrefixOf` "library" = "Libraries" ++ kw
     | a' `isPrefixOf` "compiler" = "Compilers" ++ kw
@@ -101,44 +101,39 @@ getPackages ason =
 
 mkHtmlPackagePages :: String -> [L.Package] -> IO ()
 mkHtmlPackagePages t pkgs = do
-    writeFile "index.html" $ renderListingsPage t pkgs
+    writeFile "index.html" $ renderListingPage t pkgs
     mapM_ mkHtmlVersionPage pkgs
     mapM_ mkHtmlHelpPages pkgs
 
 mkHtmlVersionPage :: L.Package -> IO ()
 mkHtmlVersionPage p = 
-    writeFile (toLinkName (L.package p) ++ ".html") $ renderVersionPage p
+    writeFile (T.unpack $ toLinkName (L.package p) `T.append` ".html") $ 
+        renderVersionPage p
 
 mkHtmlHelpPages :: L.Package -> IO ()
 mkHtmlHelpPages p = 
     mapM_ (\v -> 
-        writeFile (toLinkName (L.fullName v) ++ ".html") $ renderHelpPage v) 
-        (HM.elems $ L.versions p)
+        writeFile (T.unpack $ toLinkName (L.fullName v) `T.append` ".html") $ 
+            renderHelpPage v) (HM.elems $ L.versions p)
 
 mkRstPackagePages :: String -> [L.Package] -> IO ()
 mkRstPackagePages t pkgs = do
     writeFile "index.rst" $ 
-        htmlToRst . renderListingsPage t $ pkgs
+        htmlToRst . renderListingPage t $ pkgs
     mapM_ mkRstVersionPage pkgs
     mapM_ mkRstHelpPages pkgs
 
 mkRstVersionPage :: L.Package -> IO ()
 mkRstVersionPage p = 
-    writeFile (toLinkName  (L.package p) ++ ".rst") $ 
+    writeFile (T.unpack $ toLinkName  (L.package p) `T.append` ".rst") $ 
         htmlToRst . renderVersionPage $ p
 
 mkRstHelpPages :: L.Package -> IO ()
 mkRstHelpPages p = 
     mapM_ (\v -> 
-        writeFile (toLinkName (L.fullName v) ++ ".rst") $ 
+        writeFile (T.unpack $ toLinkName (L.fullName v) `T.append` ".rst") $ 
             htmlToRst . renderHelpPage $ v) 
         (HM.elems $ L.versions p)
-
-renderListingsPage t pkgs = renderHtml . toListingPage t $ pkgs
-
-renderVersionPage p = renderHtml . toVersionPage $ p
-
-renderHelpPage v = renderHtml . toHelpPage $ v
 
 handler :: IO.IOError -> IO ()  
 handler e  
