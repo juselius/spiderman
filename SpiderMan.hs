@@ -1,6 +1,6 @@
 #!/usr/bin/env runhaskell 
 --
--- Parse Lmod JSON to Package representation:
+-- Parse Lmod JSON to Package representation
 --
 -- $ /path/to/spider -o softwarePage /opt/modulefiles > lmod.json
 -- 
@@ -28,7 +28,7 @@ data Flags = Flags {
     , inpfile :: FilePath
     , category :: String
     , keyword :: String
-    , rst :: Bool
+    , format :: String
     } deriving (Data, Typeable, Show, Eq)
 
 flags = Flags {
@@ -38,7 +38,7 @@ flags = Flags {
         help "Generate pages only for CATEGORY"
     , keyword = "" &= typ "KEYWORD" &= 
         help "Generate pages for KEYWORD"
-    , rst = def  &= help "Generate reStructuredText"
+    , format = "html" &= help "Output format: html, rst, gitit, mas"
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
@@ -63,10 +63,11 @@ main = do
         p = filterCategory (category args) . filterKeyword (keyword args) $ 
             pkgs 
         t = titulator (category args, keyword args) in
-            if rst args then 
-                mkRstPackagePages t p 
-            else 
-                mkHtmlPackagePages t p
+            case format args of
+                "html" -> mkPackagePages t "html" id $ p
+                "rst" -> mkPackagePages t "rst" htmlToRst $ p
+                "gitit" -> mkPackagePages t "page" (toGitit . htmlToRst) $ p
+                _ -> error "Invalid output format!"
 
 titulator (a, b) 
     | null a = p ++ kw
@@ -99,41 +100,21 @@ getPackages ason =
         Just x -> return $ L.getPackages x
         otherwise -> return []
 
-mkHtmlPackagePages :: String -> [L.Package] -> IO ()
-mkHtmlPackagePages t pkgs = do
-    writeFile "index.html" $ renderListingPage t pkgs
-    mapM_ mkHtmlVersionPage pkgs
-    mapM_ mkHtmlHelpPages pkgs
+mkPackagePages :: String -> String -> (String -> String) -> [L.Package] -> IO ()
+mkPackagePages t ext fmt pkgs = do
+    writeFile ("index" ++ "." ++ ext) $ fmt . renderListingPage t $ pkgs
+    mapM_ (mkVersionPage ext fmt) pkgs 
+    mapM_ (mkHelpPages ext fmt) pkgs
 
-mkHtmlVersionPage :: L.Package -> IO ()
-mkHtmlVersionPage p = 
-    writeFile (T.unpack $ toLinkName (L.package p) `T.append` ".html") $ 
-        renderVersionPage p
+mkVersionPage :: String -> (String -> String) -> L.Package -> IO ()
+mkVersionPage ext fmt p = 
+    writeFile (toLinkString (L.package p) ++ "." ++ ext) $ 
+        fmt . renderVersionPage $ p
 
-mkHtmlHelpPages :: L.Package -> IO ()
-mkHtmlHelpPages p = 
-    mapM_ (\v -> 
-        writeFile (T.unpack $ toLinkName (L.fullName v) `T.append` ".html") $ 
-            renderHelpPage v) (HM.elems $ L.versions p)
-
-mkRstPackagePages :: String -> [L.Package] -> IO ()
-mkRstPackagePages t pkgs = do
-    writeFile "index.rst" $ 
-        htmlToRst . renderListingPage t $ pkgs
-    mapM_ mkRstVersionPage pkgs
-    mapM_ mkRstHelpPages pkgs
-
-mkRstVersionPage :: L.Package -> IO ()
-mkRstVersionPage p = 
-    writeFile (T.unpack $ toLinkName  (L.package p) `T.append` ".rst") $ 
-        htmlToRst . renderVersionPage $ p
-
-mkRstHelpPages :: L.Package -> IO ()
-mkRstHelpPages p = 
-    mapM_ (\v -> 
-        writeFile (T.unpack $ toLinkName (L.fullName v) `T.append` ".rst") $ 
-            htmlToRst . renderHelpPage $ v) 
-        (HM.elems $ L.versions p)
+mkHelpPages :: String -> (String -> String) -> L.Package -> IO ()
+mkHelpPages ext fmt p = 
+    mapM_ (\v -> writeFile (toLinkString (L.fullName v) ++ "." ++ ext) 
+        (fmt . renderHelpPage $ v)) (HM.elems $ L.versions p)
 
 handler :: IO.IOError -> IO ()  
 handler e  

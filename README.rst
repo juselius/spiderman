@@ -6,7 +6,7 @@ SpiderMan can also:
 
 * Filter output on category and keywords
 * Generate rst
-* Generate ``.page``-rst for `gitit <http://gitit.net>`_ (soon)
+* Generate ``.page``-rst for `gitit <http://gitit.net>`_ 
 * Generate MetaDoc software page xml (soon)
 
 Usage

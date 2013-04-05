@@ -8,7 +8,8 @@ module SoftwarePage (
       renderListingPage
     , renderVersionPage
     , renderHelpPage
-    , toLinkName
+    , toLinkString
+    , toGitit
     , rstToHtml
     , htmlToRst
     ) where
@@ -75,7 +76,7 @@ toListingRow x = H.tr $ do
                     H.toHtml $ reverse p
         ver = H.a ! A.href (H.toValue . toLinkName . package $ x) $ 
             H.toHtml $ defaultVersion x
-        desc = H.toHtml . T.take 60 . description $ x
+        desc = H.toHtml . T.take 80 . description $ x
         
 -- | Create a version page for a package 
 toVersionPage :: Package -> H.Html
@@ -106,21 +107,14 @@ cleanPath x
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
-gititMeta t = "---\ntoc: no\ntitle: " ++ t ++ "\n...\n\n"
-
--- | Generate gitit rst pages w/ appropriate metatags
-toGititListingPage t p = 
-    (gititMeta t) ++ (htmlToRst $ renderListingPage t p)
-
--- | Generate gitit rst pages w/ appropriate metatags
-toGititVersionPage p = id
-
--- | Generate gitit rst pages w/ appropriate metatags
-toGititHelPage v = id
+toGitit p = "---\ntoc: no\ntitle:\n...\n\n" ++ p
 
 -- | Convert a package/version path to a usable url name
 toLinkName :: T.Text -> T.Text
 toLinkName = T.toLower . T.replace "/" "."  
+
+toLinkString :: T.Text -> String
+toLinkString = T.unpack . toLinkName 
 
 toHtmlLinkName :: T.Text -> T.Text
 toHtmlLinkName p = toLinkName p `T.append` ".html"
