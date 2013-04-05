@@ -19,5 +19,5 @@ Disclaimer
 
 This program should probably have been written in Lua or Python. But I needed
 to learn Haskell, so it's written in Haskell. Complaints are accepted in
-in hardcopy only.
+hardcopy only.
 
