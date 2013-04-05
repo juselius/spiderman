@@ -8,6 +8,7 @@ Usage
 ------
 
 ::
+
   $ runhaskell SpiderMan.hs --help
   $ ./runspider.sh /path/to/modulefiles > modules.json
   $ runhaskell SpiderMan.sh modules.json

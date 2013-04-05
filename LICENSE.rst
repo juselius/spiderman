@@ -1,3 +1,6 @@
+License 
+========
+
 | This work 'as-is' we provide.
 | No warranty express or implied.
 |      We've done our best,
@@ -10,6 +13,6 @@
 |      free or for profit.
 | These rights, on this notice, rely.
 
-(c) Jonas Juselius, 2013.
+\(c) Jonas Juselius, 2013.
 
 (*License by Alexander Edward Genaud, 2005*)
