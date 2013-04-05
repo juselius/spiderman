@@ -11,6 +11,7 @@
 import SoftwarePage
 import Data.Aeson
 import Data.Char
+import Data.List
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
@@ -69,10 +70,10 @@ main = do
                 mkHtmlPackagePages t p
 
 titulator (a, b) 
-    | a' == "development" = "Development " ++ p ++ kw
-    | a' == "library" = "Libraries" ++ kw
-    | a' == "compiler" = "Compilers" ++ kw
-    | a' == "application" = "Applications" ++ kw
+    | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
+    | a' `isPrefixOf` "library" = "Libraries" ++ kw
+    | a' `isPrefixOf` "compiler" = "Compilers" ++ kw
+    | a' `isPrefixOf` "application" = "Applications" ++ kw
     | otherwise = p ++ kw
     where 
         a' = map toLower a
@@ -81,11 +82,14 @@ titulator (a, b)
 
 filterCategory x 
     | null x = id
-    | otherwise = filter (\y -> (T.toLower . L.category) y == T.pack x) 
+    | otherwise = filter (\y -> lowerText x `T.isPrefixOf` L.category y) 
+
 
 filterKeyword x 
     | null x = id
-    | otherwise = filter $ elem ((T.toLower . T.pack) x) . L.keywords
+    | otherwise = filter (any (lowerText x `T.isInfixOf`) . L.keywords)
+
+lowerText = T.toLower . T.pack
 
 printKeyword = fmap print $ map L.keywords
 
