@@ -54,8 +54,8 @@ instance FromJSON Package where
         <*> liftM T.toLower (o .:? "categories" .!= "") 
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
-        <*> liftM (T.splitOn "," . unspace . T.toLower) 
-            (o .:? "keywords" .!= "") 
+        <*> (liftM (map T.strip . T.splitOn (T.pack ",") . T.toLower) 
+            (o .:? "keywords" .!= ""))
         <*> o .:? "url" .!= ""
         <*> o .: "displayName" 
         <*> do  
