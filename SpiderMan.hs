@@ -64,9 +64,9 @@ main = do
             pkgs 
         t = titulator (category args, keyword args) in
             case format args of
-                "html" -> mkPackagePages t "html" id $ p
-                "rst" -> mkPackagePages t "rst" htmlToRst $ p
-                "gitit" -> mkPackagePages t "page" (toGitit . htmlToRst) $ p
+                "html" -> mkPackagePages t "html" id p
+                "rst" -> mkPackagePages t "rst" htmlToRst p
+                "gitit" -> mkPackagePages t "page" (toGitit . htmlToRst) p
                 _ -> error "Invalid output format!"
 
 titulator (a, b) 
