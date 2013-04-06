@@ -19,6 +19,7 @@ library
   exposed-modules:   
     Lmodulator,
     SoftwarePage
+    MasXml
   build-depends:     
     base ==4.5.*
     , filepath
@@ -30,6 +31,7 @@ library
     , blaze-html
     , blaze-markup
     , pandoc
+    , xmlgen
 
 executable spiderman
   main-is:            SpiderMan.hs 

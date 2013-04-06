@@ -9,6 +9,7 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
 import SoftwarePage
+import MasXml
 import Data.Aeson
 import Data.Char
 import Data.List
@@ -22,10 +23,12 @@ import qualified System.Environment as Env
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
-
+import qualified Text.StringTemplate as ST
+ 
 data Flags = Flags {
       outdir :: FilePath
     , inpfile :: FilePath
+    , template_dir :: FilePath
     , category :: String
     , keyword :: String
     , format :: String
@@ -33,6 +36,7 @@ data Flags = Flags {
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
+    , template_dir = "" &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
         help "Generate pages only for CATEGORY"
@@ -67,7 +71,12 @@ main = do
                 "html" -> mkPackagePages t "html" id p
                 "rst" -> mkPackagePages t "rst" htmlToRst p
                 "gitit" -> mkPackagePages t "page" (toGitit . htmlToRst) p
+                "mas" -> mkMasXml "mas" p
                 _ -> error "Invalid output format!"
+--     templates <- ST.directoryGroup "/home/jonas/src/spiderman/data/templates/" :: IO (ST.STGroup T.Text)
+--     let Just t = ST.getStringTemplate "page" templates
+--     print $ ST.render t
+
 
 titulator (a, b) 
     | null a = p ++ kw
@@ -116,6 +125,9 @@ mkHelpPages ext fmt p =
     mapM_ (\v -> writeFile (toLinkString (L.fullName v) ++ "." ++ ext) 
         (fmt . renderHelpPage $ v)) (HM.elems $ L.versions p)
 
+mkMasXml :: String -> [L.Package] -> IO ()
+mkMasXml f p = writeFile (f ++ ".xml") $ BS.unpack $ renderMasXml p
+        
 handler :: IO.IOError -> IO ()  
 handler e  
     | IO.isDoesNotExistError e =    
