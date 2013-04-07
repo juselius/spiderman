@@ -23,26 +23,29 @@ import qualified System.Environment as Env
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Text.StringTemplate as ST
  
 data Flags = Flags {
       outdir :: FilePath
     , inpfile :: FilePath
-    , template_dir :: FilePath
+    , templatedir :: FilePath
     , category :: String
     , keyword :: String
     , format :: String
+    , url :: String
     } deriving (Data, Typeable, Show, Eq)
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
-    , template_dir = "" &= typDir &= help "Template directory for HTML pages"
+    , templatedir = "" &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
         help "Generate pages only for CATEGORY"
     , keyword = "" &= typ "KEYWORD" &= 
         help "Generate pages for KEYWORD"
     , format = "html" &= help "Output format: html, rst, gitit, mas"
+    , url = "" &= help "Base url for links"
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
@@ -68,15 +71,14 @@ main = do
             pkgs 
         t = titulator (category args, keyword args) in
             case format args of
-                "html" -> mkPackagePages t "html" id p
-                "rst" -> mkPackagePages t "rst" htmlToRst p
-                "gitit" -> mkPackagePages t "page" (toGitit . htmlToRst) p
-                "mas" -> mkMasXml "mas" p
+                "html" -> mkPackagePages t ".html" id p
+                "rst" -> mkPackagePages t ".rst" htmlToRst p
+                "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
+                "mas" -> mkMasXml (url args) "software" p
                 _ -> error "Invalid output format!"
 --     templates <- ST.directoryGroup "/home/jonas/src/spiderman/data/templates/" :: IO (ST.STGroup T.Text)
---     let Just t = ST.getStringTemplate "page" templates
---     print $ ST.render t
-
+--     let Just st = ST.getStringTemplate "page" templates in
+--         TIO.putStrLn $ ST.render st
 
 titulator (a, b) 
     | null a = p ++ kw
@@ -111,22 +113,23 @@ getPackages ason =
 
 mkPackagePages :: String -> String -> (String -> String) -> [L.Package] -> IO ()
 mkPackagePages t ext fmt pkgs = do
-    writeFile ("index" ++ "." ++ ext) $ fmt . renderListingPage t $ pkgs
+    writeFile ("index" ++ ext) $ fmt . renderListingPage t $ pkgs
     mapM_ (mkVersionPage ext fmt) pkgs 
     mapM_ (mkHelpPages ext fmt) pkgs
 
 mkVersionPage :: String -> (String -> String) -> L.Package -> IO ()
 mkVersionPage ext fmt p = 
-    writeFile (toLinkString (L.package p) ++ "." ++ ext) $ 
+    writeFile (packageVersionFile p ext) $ 
         fmt . renderVersionPage $ p
 
 mkHelpPages :: String -> (String -> String) -> L.Package -> IO ()
 mkHelpPages ext fmt p = 
-    mapM_ (\v -> writeFile (toLinkString (L.fullName v) ++ "." ++ ext) 
+    mapM_ (\v -> writeFile (packageHelpFile v ext) 
         (fmt . renderHelpPage $ v)) (HM.elems $ L.versions p)
 
-mkMasXml :: String -> [L.Package] -> IO ()
-mkMasXml f p = writeFile (f ++ ".xml") $ BS.unpack $ renderMasXml p
+mkMasXml :: String -> String -> [L.Package] -> IO ()
+mkMasXml baseUrl f p = writeFile (f ++ ".xml") $ 
+    BS.unpack $ renderMasXml baseUrl p
         
 handler :: IO.IOError -> IO ()  
 handler e  

@@ -8,10 +8,15 @@ module SoftwarePage (
       renderListingPage
     , renderVersionPage
     , renderHelpPage
-    , toLinkString
+    , toUrl
     , toGitit
     , rstToHtml
     , htmlToRst
+    , packageVersionUrl
+    , packageHelpUrl
+    , packageVersionFile
+    , packageHelpFile
+
     ) where
 
 import Control.Applicative
@@ -71,10 +76,10 @@ toListingRow x = H.tr $ do
             if null p then 
                 "" 
             else 
-                H.a ! A.href (H.toValue . toLinkName 
+                H.a ! A.href (H.toValue . toUrl 
                     . fullName . getDefaultVersion $ x) $ 
                     H.toHtml $ reverse p
-        ver = H.a ! A.href (H.toValue . toLinkName . package $ x) $ 
+        ver = H.a ! A.href (H.toValue . toUrl . package $ x) $ 
             H.toHtml $ defaultVersion x
         desc = H.toHtml . T.take 80 . description $ x
         
@@ -88,7 +93,7 @@ toVersionPage p = toPage (displayName p) $ do
 -- | Make a version infomation row for a version page
 toVersionRow v = H.tr $ do 
     H.td $ H.toHtml vv
-    H.td $ H.a ! A.href (H.toValue $ toLinkName fn) $ 
+    H.td $ H.a ! A.href (H.toValue $ toUrl fn) $ 
         H.toHtml $ cleanPath fn
     where 
         vv = version v
@@ -110,14 +115,8 @@ cleanPath x
 toGitit p = "---\ntoc: no\ntitle:\n...\n\n" ++ p
 
 -- | Convert a package/version path to a usable url name
-toLinkName :: T.Text -> T.Text
-toLinkName = T.toLower . T.replace "/" "."  
-
-toLinkString :: T.Text -> String
-toLinkString = T.unpack . toLinkName 
-
-toHtmlLinkName :: T.Text -> T.Text
-toHtmlLinkName p = toLinkName p `T.append` ".html"
+toUrl :: T.Text -> T.Text
+toUrl = T.toLower . T.replace "/" "."  
 
 rstToHtml =  P.writeHtml P.def . P.readRST P.def 
 
@@ -128,4 +127,12 @@ renderListingPage t pkgs = renderHtml . toListingPage (T.pack t) $ pkgs
 renderVersionPage p = renderHtml . toVersionPage $ p
 
 renderHelpPage v = renderHtml . toHelpPage $ v
+
+packageVersionUrl p = toUrl (package p)
+
+packageHelpUrl v = toUrl (version v)
+
+packageVersionFile p ext = (T.unpack $ toUrl (package p)) ++ ext
+
+packageHelpFile v ext = (T.unpack $ toUrl (fullName v)) ++ ext
 

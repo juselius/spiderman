@@ -16,13 +16,13 @@ import Text.XML.Generator
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-renderMasXml p = xrender $ genMasXml p
+renderMasXml baseUrl p = xrender $ genMasXml (T.pack baseUrl) p
 
-genMasXml :: [Package] -> Xml Doc
+genMasXml :: T.Text -> [Package] -> Xml Doc
 genMasXml baseUrl p = doc defaultDocInfo $ xelem "software" $
-        xelems $ map genMasPackageInfo p
+        xelems $ map (genMasPackageInfo baseUrl) p
 
-genMasPackageInfo :: Package -> Xml Elem
+genMasPackageInfo :: T.Text -> Package -> Xml Elem
 genMasPackageInfo baseUrl p = xelem "sw_entry" $ 
     xattr "progName" (displayName p)  <> 
     xattr "version"  (defaultVersion p) <> 
