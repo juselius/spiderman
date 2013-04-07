@@ -6,6 +6,7 @@
 -- | Generate HTML from Lmod(ualtor) Packages.
 module SoftwarePage (
       renderListingPage
+    , renderHtmlListingPage
     , renderVersionPage
     , renderHelpPage
     , toUrl
@@ -32,7 +33,10 @@ import qualified Text.Pandoc as P
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
+import Text.StringTemplate
+import Text.StringTemplate.GenericStandard
 
 getDefaultHelpText :: Package -> H.Html
 getDefaultHelpText x = 
@@ -56,11 +60,9 @@ toListingPage t p = toPage t  $ do
             forM_ sortP toListingRow
     where sortP = sortBy (compare `on` T.toLower . displayName) p
 
--- | Pick out a non-failing value from a Maybe
-extract (Just x) = x
-
 -- | Fetch the default Version object from a package
-getDefaultVersion p = extract $ HM.lookup (defaultVersion p) (versions p)
+getDefaultVersion p = 
+    let Just x = HM.lookup (defaultVersion p) (versions p) in x
 
 -- | Generate a Package row in the listing table
 toListingRow :: Package -> H.Html
@@ -123,6 +125,13 @@ rstToHtml =  P.writeHtml P.def . P.readRST P.def
 htmlToRst =  P.writeRST P.def . P.readHtml P.def 
 
 renderListingPage t pkgs = renderHtml . toListingPage (T.pack t) $ pkgs
+
+renderHtmlListingPage templ t pkgs = 
+    let Just lp = getStringTemplate "page" templ in
+    render $ genTemplListingPage lp (T.pack t) pkgs
+    
+genTemplListingPage templ t p =
+    setAttribute "pagetitle" t $ setAttribute "package" p templ 
 
 renderVersionPage p = renderHtml . toVersionPage $ p
 

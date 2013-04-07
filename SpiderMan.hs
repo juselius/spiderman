@@ -25,6 +25,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.StringTemplate as ST
+-- import qualified Text.StringTemplate.Helpers as STH
  
 data Flags = Flags {
       outdir :: FilePath
@@ -38,7 +39,8 @@ data Flags = Flags {
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
-    , templatedir = "" &= typDir &= help "Template directory for HTML pages"
+    , templatedir = "/home/jonas/src/spiderman/data/templates" 
+        &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
         help "Generate pages only for CATEGORY"
@@ -63,22 +65,27 @@ dirname args
 main = do
     args <- cmdArgs flags
     ason <- BS.readFile (inpfile args)
-    Except.catch (createDirectoryIfMissing True (dirname args)) handler
-    Except.catch (setCurrentDirectory (dirname args)) handler
     pkgs <- getPackages ason
     let 
         p = filterCategory (category args) . filterKeyword (keyword args) $ 
             pkgs 
         t = titulator (category args, keyword args) in
-            case format args of
-                "html" -> mkPackagePages t ".html" id p
-                "rst" -> mkPackagePages t ".rst" htmlToRst p
-                "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
-                "mas" -> mkMasXml (url args) "software" p
-                _ -> error "Invalid output format!"
---     templates <- ST.directoryGroup "/home/jonas/src/spiderman/data/templates/" :: IO (ST.STGroup T.Text)
---     let Just st = ST.getStringTemplate "page" templates in
---         TIO.putStrLn $ ST.render st
+        if format args == "mas" then 
+            mkMasXml (url args) "software" p
+        else
+            dispatchTemplates args t p
+
+dispatchTemplates :: Flags -> String -> [L.Package] -> IO ()
+dispatchTemplates args t p = do
+    Except.catch (createDirectoryIfMissing True (dirname args)) handler
+    Except.catch (setCurrentDirectory (dirname args)) handler
+    templates <- ST.directoryGroup (templatedir args) :: 
+        IO (ST.STGroup String)
+    case format args of
+        "html" -> mkHtmlPackagePages templates t p
+        "rst" -> mkPackagePages t ".rst" htmlToRst p
+        "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
+        _ -> error "Invalid output format!"
 
 titulator (a, b) 
     | null a = p ++ kw
@@ -110,6 +117,10 @@ getPackages ason =
     case (decode ason :: Maybe L.Packages) of
         Just x -> return $ L.getPackages x
         otherwise -> return []
+
+mkHtmlPackagePages templ t pkgs = do
+    putStrLn $ renderHtmlListingPage templ t pkgs
+    writeFile ("index.html") $ renderHtmlListingPage templ t pkgs
 
 mkPackagePages :: String -> String -> (String -> String) -> [L.Package] -> IO ()
 mkPackagePages t ext fmt pkgs = do

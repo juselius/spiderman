@@ -1,7 +1,7 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
 -- | Parse Lmod JSON into more Haskell types.
 --
@@ -10,11 +10,13 @@
 -- @ $ \/path\/to\/spider -o softwarePage \/opt\/modulefiles > lmod.json@
 module Lmodulator where
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.Aeson
-import           Data.List
-import           Data.Aeson.Types
+import Control.Applicative
+import Control.Monad
+import Data.Typeable
+import Data.Data
+import Data.List
+import Data.Aeson
+import Data.Aeson.Types
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
@@ -31,14 +33,14 @@ data Package = Package
     , category  :: T.Text
     , keywords :: [T.Text]
     , versions :: HM.HashMap T.Text Version
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Data, Typeable)
  
 -- | Package version representation
 data Version = Version 
     { version :: T.Text
     , fullName :: T.Text
     , helpText :: T.Text 
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Data, Typeable)
 
 -- | Packages are packages.
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
