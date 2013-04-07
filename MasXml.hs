@@ -1,6 +1,8 @@
 --
 -- (c) jonas.juselius@uit.no, 2013
 --
+-- Note to self: xmlgen does not play well with OverloadedStrings
+-- 
 -- | Generate MetaDoc software page XML for MAPI
 module MasXml (
       genMasXml
@@ -8,31 +10,21 @@ module MasXml (
     ) where
 
 import Lmodulator
+import SoftwarePage (packageVersionUrl)
 import Data.Monoid
 import Text.XML.Generator 
+import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
-
--- genMasXml' :: Xml Doc
--- genMasXml' = 
---     let people = [("Stefan", "32"), ("Judith", "4")] 
---     in doc defaultDocInfo $ xelem "people"  "f"
---             xelems $ map (\(name, age) -> xelem "person" (xattr "age" age <#> xtext name)) people
-
 
 renderMasXml p = xrender $ genMasXml p
 
 genMasXml :: [Package] -> Xml Doc
-genMasXml p = doc defaultDocInfo $ xelem "software" $
+genMasXml baseUrl p = doc defaultDocInfo $ xelem "software" $
         xelems $ map genMasPackageInfo p
 
 genMasPackageInfo :: Package -> Xml Elem
-genMasPackageInfo p = xelem "sw_entry" $ 
-    xattr "progName" n <> 
-    xattr "version" v <> 
-    xattr "license" l <> 
-    xattr "infoUrl" u
-    where 
-        n = displayName p
-        v = defaultVersion p
-        l = ""
-        u = ""
+genMasPackageInfo baseUrl p = xelem "sw_entry" $ 
+    xattr "progName" (displayName p)  <> 
+    xattr "version"  (defaultVersion p) <> 
+    xattr "license" (license p) <> 
+    xattr "infoUrl" (baseUrl `T.append` packageVersionUrl p) 

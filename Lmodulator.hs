@@ -23,12 +23,13 @@ import qualified Data.Vector as V
 -- | Lmod package representation
 data Package = Package 
     { package :: T.Text
-    , category  :: T.Text
+    , displayName :: T.Text
     , defaultVersion :: T.Text
     , description :: T.Text
-    , keywords :: [T.Text]
     , url :: T.Text
-    , displayName :: T.Text
+    , license :: T.Text
+    , category  :: T.Text
+    , keywords :: [T.Text]
     , versions :: HM.HashMap T.Text Version
     } deriving (Eq, Show)
  
@@ -51,13 +52,14 @@ instance FromJSON Packages where
 instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
-        <*> liftM T.toLower (o .:? "categories" .!= "") 
+        <*> o .: "displayName" 
         <*> o .: "defaultVersionName" 
         <*> o .:? "description" .!= "No description" 
+        <*> o .:? "url" .!= ""
+        <*> o .:? "license" .!= ""
+        <*> liftM T.toLower (o .:? "categories" .!= "") 
         <*> liftM (map T.strip . T.splitOn (T.pack ",") . T.toLower) 
             (o .:? "keywords" .!= "")
-        <*> o .:? "url" .!= ""
-        <*> o .: "displayName" 
         <*> do  
             v <- o .: "versions" 
             vl <- liftM V.toList $ V.mapM parseJSON v :: Parser [Version]
