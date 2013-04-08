@@ -12,6 +12,7 @@ module SoftwarePageTemplate (
     , renderHtmlVersionTemplate
     , renderHtmlHelpTemplate
     , formatPackageList
+    , sortPackages
     , toUrl
     , toGitit
     , rstToHtml
@@ -45,7 +46,7 @@ formatPackageList p = map formatPackage p
 
 formatPackage :: Package -> Package
 formatPackage p = p 
-    { package = trimPackageName . package $ p
+    { moduleName = trimPackageName . package $ p
     , description = T.take 80 . description $ p
     , defaultVersion = formatVersion . getDefaultVersion $ p -- ugly
     , versionPageUrl = packageVersionUrl p
@@ -107,50 +108,49 @@ sortPackages p = formatPackageList .
 
 runListingTemplate t tit p = 
     setAttribute "pagetitle" tit $ 
-    setAttribute "package" p t
+    setAttribute "packages" p t
     
 runVersionTemplate t p = 
     setAttribute "pagetitle" ("Package " `T.append` package p) $ 
-    setAttribute "package" p t
+    setAttribute "versions" (versions p) t
 
 runHelpTemplate t v = 
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
-    setAttribute "package" v t
+    setAttribute "helptext" v t
 
 renderHtmlListingTemplate templ tit p = 
     let Just t = getStringTemplate "page" templ in
-    escapeHtmlString . render $
+    render $
         setAttribute "ext" (".html" :: String) $ 
         runListingTemplate t tit p
-    
 
 renderHtmlVersionTemplate templ p = 
     let Just t = getStringTemplate "page" templ in
-    escapeHtmlString . render $ 
+    render $ 
         setAttribute "ext" (".html" :: String) $ 
         runVersionTemplate t p
 
 renderHtmlHelpTemplate templ v = 
     let Just t = getStringTemplate "page" templ in
-    escapeHtmlString . render $ 
+    render $ 
         setAttribute "ext" (".html" :: String) $ 
         runHelpTemplate t v
 
 renderListingTemplate templ tit p = 
-    let Just t = getStringTemplate "page" templ in
+    let Just t = getStringTemplate "package_list" templ in
     render $ runListingTemplate t tit p
 
 renderVersionTemplate templ p = 
-    let Just t = getStringTemplate "page" templ in
+    let Just t = getStringTemplate "package_versions" templ in
     render $ runVersionTemplate t p
 
 renderHelpTemplate templ v = 
-    let Just t = getStringTemplate "page" templ in
+    let Just t = getStringTemplate "package_help" templ in
     render $ runHelpTemplate t v
 
 packageVersionUrl p = toUrl (package p)
 
-packageHelpUrl v = toUrl (version v)
+packageHelpUrl v = toUrl (fullName v)
 
 packageVersionFile p ext = (T.unpack $ toUrl (package p)) ++ ext
 

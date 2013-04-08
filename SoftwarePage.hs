@@ -6,7 +6,6 @@
 -- | Generate HTML from Lmod(ualtor) Packages.
 module SoftwarePage (
       renderListingPage
-    , renderHtmlListingPage
     , renderVersionPage
     , renderHelpPage
     , toUrl
@@ -35,12 +34,10 @@ import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
-import Text.StringTemplate
-import Text.StringTemplate.GenericStandard
 
 getDefaultHelpText :: Package -> H.Html
 getDefaultHelpText x = 
-    case HM.lookup (defaultVersion x) (versions x) of
+    case HM.lookup (defaultVersionName x) (versions x) of
     Just v -> H.a . H.toHtml . helpText $ v
     otherwise -> text ""
 
@@ -61,8 +58,8 @@ toListingPage t p = toPage t  $ do
     where sortP = sortBy (compare `on` T.toLower . displayName) p
 
 -- | Fetch the default Version object from a package
-getDefaultVersion p = 
-    let Just x = HM.lookup (defaultVersion p) (versions p) in x
+-- getDefaultVersion p = 
+--     let Just x = HM.lookup (defaultVersion p) (versions p) in x
 
 -- | Generate a Package row in the listing table
 toListingRow :: Package -> H.Html
@@ -73,7 +70,7 @@ toListingRow x = H.tr $ do
     H.td . H.toHtml . T.intercalate ", " . keywords $ x
     H.td desc 
     where 
-        name = H.a ! A.href (H.toValue . url $ x) $ H.toHtml . displayName $ x
+        name = H.a ! A.href (H.toValue . infoUrl $ x) $ H.toHtml . displayName $ x
         pkg = let p = takeWhile (/='/') . reverse . T.unpack . package $ x in
             if null p then 
                 "" 
@@ -82,7 +79,7 @@ toListingRow x = H.tr $ do
                     . fullName . getDefaultVersion $ x) $ 
                     H.toHtml $ reverse p
         ver = H.a ! A.href (H.toValue . toUrl . package $ x) $ 
-            H.toHtml $ defaultVersion x
+            H.toHtml $ defaultVersionName x
         desc = H.toHtml . T.take 80 . description $ x
         
 -- | Create a version page for a package 
@@ -125,13 +122,6 @@ rstToHtml =  P.writeHtml P.def . P.readRST P.def
 htmlToRst =  P.writeRST P.def . P.readHtml P.def 
 
 renderListingPage t pkgs = renderHtml . toListingPage (T.pack t) $ pkgs
-
-renderHtmlListingPage templ t pkgs = 
-    let Just lp = getStringTemplate "page" templ in
-    render $ genTemplListingPage lp (T.pack t) pkgs
-    
-genTemplListingPage templ t p =
-    setAttribute "pagetitle" t $ setAttribute "package" p templ 
 
 renderVersionPage p = renderHtml . toVersionPage $ p
 

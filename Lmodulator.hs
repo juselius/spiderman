@@ -26,13 +26,16 @@ import qualified Data.Vector as V
 data Package = Package 
     { package :: T.Text
     , displayName :: T.Text
-    , defaultVersion :: T.Text
+    , defaultVersionName :: T.Text
     , description :: T.Text
-    , url :: T.Text
+    , infoUrl :: T.Text
     , license :: T.Text
     , category  :: T.Text
     , keywords :: [T.Text]
     , versions :: HM.HashMap T.Text Version
+    , moduleName :: T.Text
+    , versionPageUrl :: T.Text
+    , defaultVersion :: Version
     } deriving (Eq, Show, Data, Typeable)
  
 -- | Package version representation
@@ -40,6 +43,7 @@ data Version = Version
     { version :: T.Text
     , fullName :: T.Text
     , helpText :: T.Text 
+    , helpPageUrl :: T.Text
     } deriving (Eq, Show, Data, Typeable)
 
 -- | Packages are packages.
@@ -55,7 +59,7 @@ instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
         <*> o .: "displayName" 
-        <*> o .: "defaultVersionName" 
+        <*> o .: "defaultVersionName"
         <*> o .:? "description" .!= "No description" 
         <*> o .:? "url" .!= ""
         <*> o .:? "license" .!= ""
@@ -67,12 +71,20 @@ instance FromJSON Package where
             vl <- liftM V.toList $ V.mapM parseJSON v :: Parser [Version]
             return $ HM.fromList $ map (\x -> 
                 (version x, x)) vl :: Parser (HM.HashMap T.Text Version)
+        <*> return ""
+        <*> return ""
+        <*> return (Version "" "" "" "") 
     parseJSON _ = mzero 
 
 instance FromJSON Version where
     parseJSON (Object o) = 
         Version <$> o .: "versionName"
-        <*> o .: "full"
+        <*> liftM T.toLower (o .: "full")
         <*> o .:? "help" .!= ""
+        <*> return ""
+
+-- | Fetch the default Version object from a package
+getDefaultVersion p =
+    let Just x = HM.lookup (defaultVersionName p) (versions p) in x
 
 unspace = T.filter (/=' ') 

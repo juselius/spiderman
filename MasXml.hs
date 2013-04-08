@@ -25,6 +25,6 @@ genMasXml baseUrl p = doc defaultDocInfo $ xelem "software" $
 genMasPackageInfo :: T.Text -> Package -> Xml Elem
 genMasPackageInfo baseUrl p = xelem "sw_entry" $ 
     xattr "progName" (displayName p)  <> 
-    xattr "version"  (defaultVersion p) <> 
+    xattr "version"  (defaultVersionName p) <> 
     xattr "license" (license p) <> 
     xattr "infoUrl" (baseUrl `T.append` packageVersionUrl p) 

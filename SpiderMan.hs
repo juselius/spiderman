@@ -8,7 +8,7 @@
 --
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
-import SoftwarePage
+import SoftwarePageTemplate
 import MasXml
 import Data.Aeson
 import Data.Char
@@ -25,7 +25,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.StringTemplate as ST
--- import qualified Text.StringTemplate.Helpers as STH
  
 data Flags = Flags {
       outdir :: FilePath
@@ -80,11 +79,11 @@ dispatchTemplates args t p = do
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
     templates <- ST.directoryGroup (templatedir args) :: 
-        IO (ST.STGroup String)
+        IO (ST.STGroup T.Text)
     case format args of
-        "html" -> mkHtmlPackagePages templates t p
-        "rst" -> mkPackagePages t ".rst" htmlToRst p
-        "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
+        "html" -> writeHtmlPackagePages templates t p
+--         "rst" -> mkPackagePages t ".rst" htmlToRst p
+--         "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
         _ -> error "Invalid output format!"
 
 titulator (a, b) 
@@ -115,28 +114,21 @@ printKeyword = fmap print $ map L.keywords
 getPackages :: BS.ByteString -> IO [L.Package]
 getPackages ason =
     case (decode ason :: Maybe L.Packages) of
-        Just x -> return $ L.getPackages x
-        otherwise -> return []
+        Just x -> return $ sortPackages . L.getPackages $ x
+        otherwise -> error "Parsing packages failed"
 
-mkHtmlPackagePages templ t pkgs = do
-    putStrLn $ renderHtmlListingPage templ t pkgs
-    writeFile ("index.html") $ renderHtmlListingPage templ t pkgs
+writeHtmlPackagePages templ t pkgs = do
+    TIO.writeFile ("index.html") $ renderHtmlListingTemplate templ t pkgs
+    mapM_ (writeHtmlVersionPage templ) pkgs 
+    mapM_ (writeHtmlHelpPages templ) pkgs
 
-mkPackagePages :: String -> String -> (String -> String) -> [L.Package] -> IO ()
-mkPackagePages t ext fmt pkgs = do
-    writeFile ("index" ++ ext) $ fmt . renderListingPage t $ pkgs
-    mapM_ (mkVersionPage ext fmt) pkgs 
-    mapM_ (mkHelpPages ext fmt) pkgs
+writeHtmlVersionPage templ p = 
+    TIO.writeFile (packageVersionFile p ".html") $ 
+        renderHtmlVersionTemplate templ p
 
-mkVersionPage :: String -> (String -> String) -> L.Package -> IO ()
-mkVersionPage ext fmt p = 
-    writeFile (packageVersionFile p ext) $ 
-        fmt . renderVersionPage $ p
-
-mkHelpPages :: String -> (String -> String) -> L.Package -> IO ()
-mkHelpPages ext fmt p = 
-    mapM_ (\v -> writeFile (packageHelpFile v ext) 
-        (fmt . renderHelpPage $ v)) (HM.elems $ L.versions p)
+writeHtmlHelpPages templ p = 
+    mapM_ (\v -> TIO.writeFile (packageHelpFile v ".html") 
+        (renderHtmlHelpTemplate templ v)) (HM.elems $ L.versions p)
 
 mkMasXml :: String -> String -> [L.Package] -> IO ()
 mkMasXml baseUrl f p = writeFile (f ++ ".xml") $ 
