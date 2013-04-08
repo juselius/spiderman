@@ -32,6 +32,7 @@ library
     , blaze-markup
     , pandoc
     , xmlgen
+    , HStringTemplate
 
 executable spiderman
   main-is:            SpiderMan.hs 
@@ -49,3 +50,5 @@ executable spiderman
     , blaze-markup
     , filepath
     , pandoc
+    , xmlgen
+    , HStringTemplate
