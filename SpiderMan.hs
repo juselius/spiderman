@@ -82,8 +82,8 @@ dispatchTemplates args t p = do
         IO (ST.STGroup T.Text)
     case format args of
         "html" -> writeHtmlPackagePages templates t p
---         "rst" -> mkPackagePages t ".rst" htmlToRst p
---         "gitit" -> mkPackagePages t ".page" (toGitit . htmlToRst) p
+        "rst" -> writePackagePages templates t ".rst" htmlToRst p
+        "gitit" -> writePackagePages templates t ".page" (toGitit.htmlToRst) p
         _ -> error "Invalid output format!"
 
 titulator (a, b) 
@@ -117,8 +117,9 @@ getPackages ason =
         Just x -> return $ sortPackages . L.getPackages $ x
         otherwise -> error "Parsing packages failed"
 
+-- HTML writers --
 writeHtmlPackagePages templ t pkgs = do
-    TIO.writeFile ("index.html") $ renderHtmlListingTemplate templ t pkgs
+    TIO.writeFile "index.html" $ renderHtmlListingTemplate templ t pkgs
     mapM_ (writeHtmlVersionPage templ) pkgs 
     mapM_ (writeHtmlHelpPages templ) pkgs
 
@@ -129,6 +130,20 @@ writeHtmlVersionPage templ p =
 writeHtmlHelpPages templ p = 
     mapM_ (\v -> TIO.writeFile (packageHelpFile v ".html") 
         (renderHtmlHelpTemplate templ v)) (HM.elems $ L.versions p)
+
+-- Generic writers --
+writePackagePages templ t ext fmt pkgs = do
+    TIO.writeFile ("index" ++ ext) $ fmt $ renderListingTemplate templ t pkgs
+    mapM_ (writeVersionPage templ ext fmt) pkgs 
+    mapM_ (writeHelpPages templ ext fmt) pkgs
+
+writeVersionPage templ ext fmt p = 
+    TIO.writeFile (packageVersionFile p ext) $ 
+        fmt $ renderVersionTemplate templ p
+
+writeHelpPages templ ext fmt p = 
+    mapM_ (\v -> TIO.writeFile (packageHelpFile v ext) 
+        (fmt $ renderHelpTemplate templ v)) (HM.elems $ L.versions p)
 
 mkMasXml :: String -> String -> [L.Package] -> IO ()
 mkMasXml baseUrl f p = writeFile (f ++ ".xml") $ 

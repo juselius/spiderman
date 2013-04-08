@@ -25,24 +25,21 @@ module SoftwarePageTemplate (
 
 import Control.Applicative
 import Control.Monad
+import Control.Arrow
 import Lmodulator 
 import Data.List
 import Data.Char
 import Data.Function (on)
-import Text.Blaze.Html5 ((!))
-import Text.Blaze.Internal (text)
 import Text.Blaze.Html.Renderer.Pretty 
+import Text.StringTemplate
+import Text.StringTemplate.GenericStandard
 import qualified Text.Pandoc as P
-import qualified Text.Blaze.Html5 as H
-import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
-import Text.StringTemplate
-import Text.StringTemplate.GenericStandard
 
 formatPackageList :: [Package] -> [Package]
-formatPackageList p = map formatPackage p
+formatPackageList = map formatPackage 
 
 formatPackage :: Package -> Package
 formatPackage p = p 
@@ -64,36 +61,12 @@ trimPackageName pkg =
     let p = T.takeWhile (/='/') . T.reverse $ pkg in
         if p == T.empty then "" else T.reverse p
 
--- | Create a version page for a package 
-toVersionPage :: Package -> H.Html
-toVersionPage p = do
-    H.h1 . H.toHtml $ T.append "Package " (displayName p)
-    H.table $ -- H.span ! A.class_ "version_table" $ 
-        forM_ (HM.elems $ versions p) toVersionRow 
-
--- | Make a version infomation row for a version page
-toVersionRow v = H.tr $ do 
-    H.td $ H.toHtml vv
-    H.td $ H.a ! A.href (H.toValue $ toUrl fn) $ 
-        H.toHtml $ cleanPath fn
-    where 
-        vv = version v
-        fn = fullName v
-
--- | Generate a help page for a package version
-toHelpPage :: Version -> H.Html
-toHelpPage v = do
-    H.h1 . H.toHtml $ T.append "Module " t
-    H.div $ -- ! A.class_ "help_page" $ 
-        H.toHtml . rstToHtml . T.unpack . helpText $ v
-    where t = cleanPath . fullName $ v
-            
 -- | Remove first part of a package path, up until first '/' 
 cleanPath x 
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
-toGitit p = "---\ntoc: no\ntitle:\n...\n\n" ++ p
+toGitit p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
 
 -- | Convert a package/version path to a usable url name
 toUrl :: T.Text -> T.Text
@@ -101,7 +74,7 @@ toUrl = T.toLower . T.replace "/" "."
 
 rstToHtml =  P.writeHtml P.def . P.readRST P.def 
 
-htmlToRst =  P.writeRST P.def . P.readHtml P.def 
+htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
 sortPackages p = formatPackageList . 
         sortBy (compare `on` T.toLower . displayName) $ p 
@@ -137,24 +110,24 @@ renderHtmlHelpTemplate templ v =
         runHelpTemplate t v
 
 renderListingTemplate templ tit p = 
-    let Just t = getStringTemplate "package_list" templ in
+    let Just t = getStringTemplate "package" templ in
     render $ runListingTemplate t tit p
 
 renderVersionTemplate templ p = 
-    let Just t = getStringTemplate "package_versions" templ in
+    let Just t = getStringTemplate "package" templ in
     render $ runVersionTemplate t p
 
 renderHelpTemplate templ v = 
-    let Just t = getStringTemplate "package_help" templ in
+    let Just t = getStringTemplate "package" templ in
     render $ runHelpTemplate t v
 
 packageVersionUrl p = toUrl (package p)
 
 packageHelpUrl v = toUrl (fullName v)
 
-packageVersionFile p ext = (T.unpack $ toUrl (package p)) ++ ext
+packageVersionFile p ext = T.unpack (toUrl (package p)) ++ ext
 
-packageHelpFile v ext = (T.unpack $ toUrl (fullName v)) ++ ext
+packageHelpFile v ext = T.unpack (toUrl (fullName v)) ++ ext
 
 htmlReplaceMap :: [(T.Text, T.Text)]
 htmlReplaceMap =  
@@ -164,7 +137,7 @@ htmlReplaceMap =
         , ("\"", "&quot;")
         , ("\'", "&#39;")
         , ("&", "&amp;") ]
-    where packBoth xy = (T.pack $ fst xy, T.pack $ snd xy)
+    where packBoth = T.pack Control.Arrow.*** T.pack
  
 escapeHtmlString :: T.Text -> T.Text
 escapeHtmlString =
