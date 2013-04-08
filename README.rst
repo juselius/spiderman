@@ -2,12 +2,16 @@ SpiderMan
 ==========
 
 Convert Lmod's ``spider -o softwarePage`` JSON into HTML pages. 
-SpiderMan can also:
+
+Features
+~~~~~~~~
 
 * Filter output on category and keywords
-* Generate rst
-* Generate ``.page``-rst for `gitit <http://gitit.net>`_ 
-* Generate MetaDoc software page xml (soon)
+* Renders HTML via easily customizable `StringTemplates
+  <http://www.stringtemplate.org/>`_
+* Generate reStructuredText output
+* Generate ``.page`` rst files for `gitit <http://gitit.net>`_ 
+* Generate MetaDoc software page xml 
 
 Usage
 ------
