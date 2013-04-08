@@ -6,5 +6,6 @@
   $if(messages)$
     $messages()$
   $endif$
+  $package()$
   $content$
 </div>

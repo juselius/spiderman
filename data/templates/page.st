@@ -3,11 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    $if(feed)$
-    <link href="$base$/_feed/" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed" />
-    <link href="$base$/_feed$pageUrl$" type="application/atom+xml" rel="alternate" title="This page's ATOM Feed" />
-    $endif$
-    <title>$wikititle$ - $pagetitle$</title>
+    <title>$pagetitle$</title>
     $if(printable)$
     <link href="$base$/css/print.css" rel="stylesheet" media="all" type= "text/css" />
     $else$
@@ -20,10 +16,8 @@
     <div id="doc3" class="yui-t1">
         <div id="yui-main">
           <div id="maincol" class="yui-b">
-            $userbox()$
             $tabs$ 
             $content()$
-            $listing_page()$
             $footer()$
           </div>
         </div>
