@@ -1,7 +1,7 @@
 SpiderMan
 ==========
 
-Convert Lmod's ``spider`` *softwarePage* JSON into HTML pages. 
+Convert Lmod's ``spider -o softwarePage`` JSON into HTML pages. 
 SpiderMan can also:
 
 * Filter output on category and keywords
