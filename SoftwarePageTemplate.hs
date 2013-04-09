@@ -76,8 +76,7 @@ rstToHtml =  P.writeHtml P.def . P.readRST P.def
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
-sortPackages p = formatPackageList . 
-        sortBy (compare `on` T.toLower . displayName) $ p 
+sortPackages p = sortBy (compare `on` T.toLower . displayName) $ p 
 
 runListingTemplate t tit p = 
     setAttribute "pagetitle" tit $ 

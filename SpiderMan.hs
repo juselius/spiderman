@@ -131,7 +131,7 @@ printKeyword = fmap print $ map L.keywords
 getPackages :: BS.ByteString -> IO [L.Package]
 getPackages ason =
     case (decode ason :: Maybe L.Packages) of
-        Just x -> return $ sortPackages . L.getPackages $ x
+        Just x -> return $ sortPackages . formatPackageList . L.getPackages $ x
         otherwise -> error "Parsing packages failed"
 
 -- HTML writers --
