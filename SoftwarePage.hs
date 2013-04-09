@@ -4,6 +4,9 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
 -- | Generate HTML from Lmod(ualtor) Packages.
+-- 
+-- This module is obsolete, but is kept for reference.
+--
 module SoftwarePage (
       renderListingPage
     , renderVersionPage

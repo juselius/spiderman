@@ -10,7 +10,7 @@ module MasXml (
     ) where
 
 import Lmodulator
-import SoftwarePage (packageVersionUrl)
+import SoftwarePageTemplate (packageVersionUrl)
 import Data.Monoid
 import Text.XML.Generator 
 import qualified Data.Text as T
