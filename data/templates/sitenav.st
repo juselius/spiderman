@@ -1,27 +1,28 @@
 <div class="sitenav">
   <fieldset>
-    <legend>Site</legend>
+    <legend>Modules</legend>
     <ul>
-      <li><a href="$base$/">Front page</a></li>
-      <li><a href="$base$/_index">All pages</a></li>
-      <li><a href="$base$/_categories">Categories</a></li>
-      <li><a href="$base$/_random">Random page</a></li>
-      <li><a href="$base$/_activity">Recent activity</a></li>
-      $if(wikiupload)$
-        <li><a href="$base$/_upload">Upload a file</a></li>
-      $endif$
-      $if(feed)$
-      <li><a href="$base$/_feed/" type="application/atom+xml" rel="alternate" title="ATOM Feed">Atom feed</a> <img alt="feed icon" src="$base$/img/icons/feed.png"/></li>
-      $endif$
-      <li><a href="$base$/Help">Help</a></li>
+      <li><a href="$base$/">Main page</a></li>
+      <li>Categories</li>
+        <ul>
+          <li><a href="$base$/software/">All</a></li>
+          <li><a href="$base$/software/application.html">Applications</a></li>
+          <li><a href="$base$/software/development.html">Development</a></li>
+          <li><a href="$base$/software/library.html">Libraries</a></li>
+        </ul>
+      <li>Topics</li>
+        <ul>
+          <li><a href="$base$/software/chemistry.html">Chemsiry</a></li>
+          <li><a href="$base$/software/physics.html">Physics</a></li>
+          <li><a href="$base$/software/math.html">Mathematics</a></li>
+          <li><a href="$base$/software/earth.html">Earth sciences</a></li>
+        </ul>
     </ul>
+    $if(enablesearch)$
     <form action="$base$/_search" method="post" id="searchform">
      <input type="text" name="patterns" id="patterns"/>
      <input type="submit" name="search" id="search" value="Search"/>
     </form>
-    <form action="$base$/_go" method="post" id="goform">
-      <input type="text" name="gotopage" id="gotopage"/>
-      <input type="submit" name="go" id="go" value="Go"/>
-    </form>
+    $endif$
   </fieldset>
 </div>
