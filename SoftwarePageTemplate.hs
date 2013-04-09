@@ -125,9 +125,9 @@ packageVersionUrl p = toUrl (package p)
 
 packageHelpUrl v = toUrl (fullName v)
 
-packageVersionFile p ext = T.unpack (toUrl (package p)) ++ ext
+packageVersionFile ext p= T.unpack (toUrl (package p)) ++ ext
 
-packageHelpFile v ext = T.unpack (toUrl (fullName v)) ++ ext
+packageHelpFile ext v = T.unpack (toUrl (fullName v)) ++ ext
 
 htmlReplaceMap :: [(T.Text, T.Text)]
 htmlReplaceMap =  

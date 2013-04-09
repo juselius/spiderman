@@ -81,11 +81,28 @@ dispatchTemplates args t p = do
     templates <- ST.directoryGroup (templatedir args) :: 
         IO (ST.STGroup T.Text)
     case format args of
-        "html" -> writeHtmlPackagePages templates t p
-        "rst" -> writePackagePages templates t ".rst" htmlToRst p
-        "gitit" -> writePackagePages templates t ".page" (toGitit.htmlToRst) p
+        "html" -> writeHtmlPackagePages fname templates t p
+        "rst" -> writePackagePages fname templates t  htmlToRst p
+        "gitit" -> writePackagePages fname templates t (toGitit.htmlToRst) p
         _ -> error "Invalid output format!"
+    where fname = mkIndexFileName args
 
+mkIndexFileName args = 
+    let fext = case format args of
+            "html" -> ".html"
+            "rst" ->  ".rst"
+            "gitit" -> ".page"
+            _ -> error "Invalid output format!"
+        catg = category args
+        keyw = keyword args
+        fname = 
+            if null catg && null keyw then "index" else
+            if null catg then keyw else 
+            if null keyw then catg else catg ++ "_" ++ keyw in
+    fname ++ fext
+
+getFileExt = dropWhile (/='.')
+    
 titulator (a, b) 
     | null a = p ++ kw
     | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
@@ -118,31 +135,32 @@ getPackages ason =
         otherwise -> error "Parsing packages failed"
 
 -- HTML writers --
-writeHtmlPackagePages templ t pkgs = do
-    TIO.writeFile "index.html" $ renderHtmlListingTemplate templ t pkgs
+writeHtmlPackagePages fname templ t pkgs = do
+    TIO.writeFile fname $ renderHtmlListingTemplate templ t pkgs
     mapM_ (writeHtmlVersionPage templ) pkgs 
     mapM_ (writeHtmlHelpPages templ) pkgs
 
 writeHtmlVersionPage templ p = 
-    TIO.writeFile (packageVersionFile p ".html") $ 
+    TIO.writeFile (packageVersionFile ".html" p) $ 
         renderHtmlVersionTemplate templ p
 
 writeHtmlHelpPages templ p = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFile v ".html") 
+    mapM_ (\v -> TIO.writeFile (packageHelpFile ".html" v) 
         (renderHtmlHelpTemplate templ v)) (HM.elems $ L.versions p)
 
 -- Generic writers --
-writePackagePages templ t ext fmt pkgs = do
-    TIO.writeFile ("index" ++ ext) $ fmt $ renderListingTemplate templ t pkgs
-    mapM_ (writeVersionPage templ ext fmt) pkgs 
-    mapM_ (writeHelpPages templ ext fmt) pkgs
+writePackagePages fname templ t fmt pkgs = do
+    let ext = getFileExt fname 
+    TIO.writeFile fname $ fmt $ renderListingTemplate templ t pkgs
+    mapM_ (writeVersionPage ext templ fmt) pkgs 
+    mapM_ (writeHelpPages ext templ fmt) pkgs
 
-writeVersionPage templ ext fmt p = 
-    TIO.writeFile (packageVersionFile p ext) $ 
+writeVersionPage ext templ fmt p = 
+    TIO.writeFile (packageVersionFile ext p) $ 
         fmt $ renderVersionTemplate templ p
 
-writeHelpPages templ ext fmt p = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFile v ext) 
+writeHelpPages ext templ fmt p = 
+    mapM_ (\v -> TIO.writeFile (packageHelpFile ext v) 
         (fmt $ renderHelpTemplate templ v)) (HM.elems $ L.versions p)
 
 mkMasXml :: String -> String -> [L.Package] -> IO ()

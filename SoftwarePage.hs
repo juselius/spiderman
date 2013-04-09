@@ -131,7 +131,7 @@ packageVersionUrl p = toUrl (package p)
 
 packageHelpUrl v = toUrl (version v)
 
-packageVersionFile p ext = (++) . T.unpack . toUrl . package $ p 
+packageVersionFile ext p = (++) . T.unpack . toUrl . package $ p 
 
-packageHelpFile v ext = (++) . T.unpack . toUrl . fullName $ v 
+packageHelpFile ext v = (++) . T.unpack . toUrl . fullName $ v 
 
