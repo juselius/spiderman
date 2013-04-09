@@ -2,9 +2,9 @@
 
 runspider=/opt/bin/runspider.sh
 spiderman=/opt/bin/spiderman
-l=/opt/modulefiles
+mf=/opt/modulefiles
 
-dirs="$l/Core $l/Applications $l/Development $l/Libraries $l/special"
+dirs="$mf/Core $mf/Applications $mf/Development $mf/Libraries $mf/special"
 
 $runspider $dirs >all.json
 $spiderman -c application all.json
