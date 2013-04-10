@@ -24,16 +24,8 @@
         <div id="sidebar" class="yui-b first">
           $logo()$
           $sitenav()$
-          $if(pagetools)$
-            $pagetools()$
-          $endif$
-          $if(markuphelp)$
-            $markuphelp()$
-          $endif$
         </div>
     </div>
     $javascripts$
-    $expire()$
-    $getuser()$
   </body>
 </html>
