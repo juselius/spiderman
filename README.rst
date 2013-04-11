@@ -43,10 +43,9 @@ Building
 For better performance and faster startup you might want to compile and
 install spiderman (see the cabal documentation for the details)::
 
-    ($ cabal install --only-dependencies)
-    $ cabal configure
-    $ cabal build
     $ cabal install
+    or
+    $ sudo cabal install --global
 
 Disclaimer
 ~~~~~~~~~~~

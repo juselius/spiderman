@@ -18,7 +18,7 @@ $if(packages)$
 }$
     </table>
 $elseif(helptext)$
-    $helptext.helpText$
+    $helptext$
 $elseif(versions)$
     <table>
     $versions:{

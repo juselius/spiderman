@@ -53,7 +53,7 @@ formatPackage p = p
     } 
     
 formatVersion v = v 
-    { helpText = T.pack . renderHtml . rstToHtml . T.unpack . helpText $ v
+    { helpText = T.pack . rstToHtml . T.unpack . helpText $ v
     , helpPageUrl = packageHelpUrl v 
     } 
 
@@ -72,7 +72,7 @@ toGitit p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
 toUrl :: T.Text -> T.Text
 toUrl = T.toLower . T.replace "/" "."  
 
-rstToHtml =  P.writeHtml P.def . P.readRST P.def 
+rstToHtml =  P.writeHtmlString P.def . P.readRST P.def 
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
@@ -88,7 +88,7 @@ runVersionTemplate t p =
 
 runHelpTemplate t v = 
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
-    setAttribute "helptext" v t
+    setAttribute "helptext" (helpText v) t
 
 renderHtmlListingTemplate templ tit p = 
     let Just t = getStringTemplate "page" templ in
