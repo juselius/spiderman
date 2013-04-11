@@ -2,7 +2,7 @@ License
 ========
 
 | This work 'as-is' we provide.
-| No warranty express or implied.
+| No warranty expressed or implied.
 |      We've done our best,
 |      to debug and test.
 | Liability for damages denied.

@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                spiderman
-version:             0.1.0.0
+version:             1.0.0.0
 synopsis:            Lmod to software page
 -- description:         
 homepage:            https://github.com/bakerjonas/spiderman 
@@ -14,6 +14,8 @@ maintainer:          jonas.juselius@uit.no
 -- category:            
 build-type:          Simple
 cabal-version:       >=1.8
+
+extra-source-files: README.rst
 
 library 
   exposed-modules:   
@@ -52,3 +54,6 @@ executable spiderman
     , pandoc
     , xmlgen
     , HStringTemplate
+  other-modules: Paths_spiderman
+  cpp-options: -DCABAL_BUILD
+

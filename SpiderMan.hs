@@ -6,7 +6,11 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
+{-# LANGUAGE CPP, DeriveDataTypeable, OverloadedStrings #-}
+
+#ifdef CABAL_BUILD
+import Paths_spiderman
+#endif
 
 import SoftwarePageTemplate
 import MasXml
@@ -50,7 +54,7 @@ flags = Flags {
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
-    &= summary "Lmodulator v1.0.0, (c) Henry H. Juxtapose" 
+    &= summary "Version " ++ version ++ ", (c) Jonas Juselius 2013" 
     &= details [
          "Process JSON into a HTML tree."
         ,"Create the appropriate JSON file using the 'runspider.sh' script."
@@ -174,3 +178,8 @@ handler e
     | IO.isPermissionError e = 
         putStrLn "Permissions denied!"  
     | otherwise = ioError e  
+
+#ifndef CABAL_BUILD
+version = "1.0"
+getDataFileName = ""
+#endif
