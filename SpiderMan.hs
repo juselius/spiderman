@@ -1,4 +1,3 @@
-#!/usr/bin/env runhaskell 
 --
 -- Parse Lmod JSON to Package representation
 --
@@ -42,7 +41,7 @@ data Flags = Flags {
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
-    , templatedir = "/home/jonas/src/spiderman/data/templates" 
+    , templatedir = (getDataFileName "templates")
         &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
@@ -54,7 +53,7 @@ flags = Flags {
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
-    &= summary "Version " ++ version ++ ", (c) Jonas Juselius 2013" 
+    &= summary ("Version " ++ version ++ ", (c) Jonas Juselius 2013")
     &= details [
          "Process JSON into a HTML tree."
         ,"Create the appropriate JSON file using the 'runspider.sh' script."
@@ -181,5 +180,5 @@ handler e
 
 #ifndef CABAL_BUILD
 version = "1.0"
-getDataFileName = ""
+getDataFileName x = "/home/jonas/src/spiderman/data/" ++ x
 #endif
