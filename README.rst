@@ -30,7 +30,7 @@ Run SiderMan::
 
     $ runhaskell SpiderMan.hs --help
     $ ./data/examples/runspider.sh /path/to/modulefiles/{Core,Apps,...} > modules.json
-    $ runhaskell SpiderMan.sh modules.json
+    $ runhaskell SpiderMan.hs modules.json
     $ xdg-open modules/index.html
 
 If you want to nicely formatted pages, you need to install the files in 

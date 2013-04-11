@@ -16,6 +16,7 @@ import MasXml
 import Data.Aeson
 import Data.Char
 import Data.List
+import Data.Version
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
@@ -41,8 +42,7 @@ data Flags = Flags {
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
-    , templatedir = (getDataFileName "templates")
-        &= typDir &= help "Template directory for HTML pages"
+    , templatedir = "" &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
         help "Generate pages only for CATEGORY"
@@ -53,7 +53,7 @@ flags = Flags {
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
-    &= summary ("Version " ++ version ++ ", (c) Jonas Juselius 2013")
+    &= summary ("Version " ++ ver ++ ", (c) Jonas Juselius 2013")
     &= details [
          "Process JSON into a HTML tree."
         ,"Create the appropriate JSON file using the 'runspider.sh' script."
@@ -79,9 +79,11 @@ main = do
 
 dispatchTemplates :: Flags -> String -> [L.Package] -> IO ()
 dispatchTemplates args t p = do
+    defTemplDir <- getDataFileName "templates"
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
-    templates <- ST.directoryGroup (templatedir args) :: 
+    let templdir = if null $ templatedir args then defTemplDir else templatedir args 
+    templates <- ST.directoryGroup (templdir) :: 
         IO (ST.STGroup T.Text)
     case format args of
         "html" -> writeHtmlPackagePages fname templates t p
@@ -178,7 +180,11 @@ handler e
         putStrLn "Permissions denied!"  
     | otherwise = ioError e  
 
+ver = showVersion version
+
 #ifndef CABAL_BUILD
-version = "1.0"
-getDataFileName x = "/home/jonas/src/spiderman/data/" ++ x
+version = Version [1, 0] []
+getDataFileName x = do 
+    cwd <- getCurrentDirectory 
+    return $ cwd </> "data" </> x
 #endif
