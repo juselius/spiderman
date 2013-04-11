@@ -1,5 +1,6 @@
 #!/bin/bash
 
+. /opt/lmod/lmod/init/profile
 spider=/opt/lmod/lmod/libexec/spider
 
 for i in $*; do
