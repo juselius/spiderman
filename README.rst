@@ -24,12 +24,13 @@ Make sure you have Haskell Platform installed:
 
 Install the prerequisites::
 
+    $ cabal update
     $ cabal install --only-dependencies
 
 Run SiderMan::
 
     $ runhaskell SpiderMan.hs --help
-    $ ./data/examples/runspider.sh /path/to/modulefiles/{Core,Apps,...} > modules.json
+    $ ./examples/runspider.sh /path/to/modulefiles/{Core,Apps,...} > modules.json
     $ runhaskell SpiderMan.hs modules.json
     $ xdg-open modules/index.html
 
