@@ -44,7 +44,7 @@ formatPackageList = map formatPackage
 formatPackage :: Package -> Package
 formatPackage p = p 
     { moduleName = trimPackageName . package $ p
-    , description = T.take 80 . description $ p
+--     , description = T.take 80 . description $ p
     , defaultVersion = formatVersion . getDefaultVersion $ p -- ugly
     , versionPageUrl = packageVersionUrl p
     , category  = T.toLower . category $ p
