@@ -4,7 +4,6 @@ $if(packages)$
 <td>Program</td>
 <td>Module</td>
 <td>Default version</td>
-<td>Keywords</td>
 <td>Description</td>
 </tr>
     $packages:{
