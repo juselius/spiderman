@@ -12,7 +12,6 @@ $if(packages)$
     <td><a href="$it.infoUrl$">$it.displayName$</a></td>
     <td><a href="$it.defaultVersion.helpPageUrl$$ext$">$it.moduleName$</a></td>
     <td><a href="$it.versionPageUrl$$ext$">$it.defaultVersionName$</a></td>
-    <td>$it.keywords; separator=', '$</td>
     <td>$it.description$</td>
 </tr>
 }$
@@ -21,6 +20,14 @@ $elseif(helptext)$
     $helptext$
 $elseif(versions)$
     <table>
+    <tr>
+    <td>Keywords:</td>
+    <td>$it.keywords; separator=', '$</td>
+    </tr>
+    </table>
+    
+    <table>
+    <tr><td>Version</td> <td>Module</td></tr>
     $versions:{
     <tr>
         <td>$it.version$</td>
