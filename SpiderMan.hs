@@ -122,11 +122,13 @@ titulator (a, b)
 
 filterCategory x 
     | null x = id
+    | x == "all" = id
     | otherwise = filter (\y -> lowerText x `T.isPrefixOf` L.category y) 
 
 
 filterKeyword x 
     | null x = id
+    | x == "all" = id
     | otherwise = filter (any (lowerText x `T.isInfixOf`) . L.keywords)
 
 lowerText = T.toLower . T.pack
