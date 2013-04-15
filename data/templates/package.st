@@ -21,7 +21,7 @@ $elseif(versions)$
     <table>
     <tr>
     <td>Keywords:</td>
-    <td>$it.keywords; separator=', '$</td>
+    <td>$keywords; separator=', '$</td>
     </tr>
     </table>
     

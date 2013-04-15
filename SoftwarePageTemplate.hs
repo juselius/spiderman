@@ -84,7 +84,8 @@ runListingTemplate t tit p =
     
 runVersionTemplate t p = 
     setAttribute "pagetitle" ("Package " `T.append` package p) $ 
-    setAttribute "versions" (versions p) t
+    setAttribute "versions" (versions p) $
+    setAttribute "keywords" (keywords p) t 
 
 runHelpTemplate t v = 
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
