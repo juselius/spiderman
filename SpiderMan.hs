@@ -85,9 +85,9 @@ dispatchTemplates args t p = do
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
     let templdir = if null $ templatedir args 
-        then defTemplDir 
-        else templatedir args 
-    templates <- ST.directoryGroup (templdir) :: IO (ST.STGroup T.Text)
+            then defTemplDir 
+            else templatedir args 
+    templates <- ST.directoryGroup templdir :: IO (ST.STGroup T.Text)
     case format args of
         "html" -> writeHtml fname templates t p
         "rst" -> writePkgs fname templates t htmlToRst p
@@ -110,10 +110,11 @@ mkIndexFileName args =
             _ -> error "Invalid output format!"
         catg = category args
         keyw = keyword args
-        fname = 
-            if null catg && null keyw then "index" else
-            if null catg then keyw else 
-            if null keyw then catg else catg ++ "_" ++ keyw in
+        fname  
+            | null catg && null keyw = "index" 
+            | null catg = keyw 
+            | null keyw = catg 
+            | otherwise = catg ++ "_" ++ keyw in
     fname ++ fext
 
 getFileExt = dropWhile (/='.')
