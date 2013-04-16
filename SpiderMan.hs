@@ -38,6 +38,7 @@ data Flags = Flags {
     , keyword :: String
     , format :: String
     , url :: String
+    , mainpage :: Bool
     } deriving (Data, Typeable, Show, Eq)
 
 flags = Flags {
@@ -50,6 +51,7 @@ flags = Flags {
         help "Generate pages for KEYWORD"
     , format = "html" &= help "Output format: html, rst, gitit, mas"
     , url = "" &= help "Base url for links"
+    , mainpage = False &= help "Only generate main listing page"
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
@@ -61,13 +63,13 @@ flags = Flags {
         ]
 
 dirname args  
-    | null $ outdir args = fst . splitExtension . inpfile $ args 
+    | null $ outdir args = takeBaseName . inpfile $ args
     | otherwise = outdir args
 
 main = do
     args <- cmdArgs flags
     ason <- BS.readFile (inpfile args)
-    pkgs <- getPackages ason
+    pkgs <- getPackages ason 
     let 
         p = filterCategory (category args) . filterKeyword (keyword args) $ 
             pkgs 
@@ -82,15 +84,23 @@ dispatchTemplates args t p = do
     defTemplDir <- getDataFileName "templates"
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
-    let templdir = if null $ templatedir args then defTemplDir else templatedir args 
-    templates <- ST.directoryGroup (templdir) :: 
-        IO (ST.STGroup T.Text)
+    let templdir = if null $ templatedir args 
+        then defTemplDir 
+        else templatedir args 
+    templates <- ST.directoryGroup (templdir) :: IO (ST.STGroup T.Text)
     case format args of
-        "html" -> writeHtmlPackagePages fname templates t p
-        "rst" -> writePackagePages fname templates t  htmlToRst p
-        "gitit" -> writePackagePages fname templates t (toGitit.htmlToRst) p
+        "html" -> writeHtml fname templates t p
+        "rst" -> writePkgs fname templates t htmlToRst p
+        "gitit" -> writePkgs fname templates t (toGitit.htmlToRst) p
         _ -> error "Invalid output format!"
-    where fname = mkIndexFileName args
+    where 
+        fname = mkIndexFileName args
+        writeHtml = if mainpage args 
+            then writeHtmlListingPage 
+            else writeHtmlSoftwarePages  
+        writePkgs = if mainpage args 
+            then writeListingPage 
+            else writeSoftwarePages  
 
 mkIndexFileName args = 
     let fext = case format args of
@@ -142,10 +152,13 @@ getPackages ason =
         otherwise -> error "Parsing packages failed"
 
 -- HTML writers --
-writeHtmlPackagePages fname templ t pkgs = do
+writeHtmlSoftwarePages fname templ t pkgs = do
     TIO.writeFile fname $ renderHtmlListingTemplate templ t pkgs
     mapM_ (writeHtmlVersionPage templ) pkgs 
     mapM_ (writeHtmlHelpPages templ) pkgs
+
+writeHtmlListingPage fname templ t p = 
+    TIO.writeFile fname $ renderHtmlListingTemplate templ t p
 
 writeHtmlVersionPage templ p = 
     TIO.writeFile (packageVersionFile ".html" p) $ 
@@ -156,11 +169,14 @@ writeHtmlHelpPages templ p =
         (renderHtmlHelpTemplate templ v)) (HM.elems $ L.versions p)
 
 -- Generic writers --
-writePackagePages fname templ t fmt pkgs = do
-    let ext = getFileExt fname 
+writeSoftwarePages fname templ t fmt pkgs = do
     TIO.writeFile fname $ fmt $ renderListingTemplate templ t pkgs
+    let ext = getFileExt fname 
     mapM_ (writeVersionPage ext templ fmt) pkgs 
     mapM_ (writeHelpPages ext templ fmt) pkgs
+
+writeListingPage fname templ t fmt p = 
+    TIO.writeFile fname $ fmt $ renderListingTemplate templ t p
 
 writeVersionPage ext templ fmt p = 
     TIO.writeFile (packageVersionFile ext p) $ 
