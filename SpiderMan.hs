@@ -38,6 +38,7 @@ data Flags = Flags {
     , keyword :: String
     , format :: String
     , url :: String
+    , site :: String
     , mainpage :: Bool
     } deriving (Data, Typeable, Show, Eq)
 
@@ -51,6 +52,7 @@ flags = Flags {
         help "Generate pages for KEYWORD"
     , format = "html" &= help "Output format: html, rst, gitit, mas"
     , url = "" &= help "Base url for links"
+    , site = "" &= help "Site name"
     , mainpage = False &= help "Only generate main listing page"
     } 
     &= verbosity 
@@ -75,7 +77,7 @@ main = do
             pkgs 
         t = titulator (category args, keyword args) in
         if format args == "mas" then 
-            mkMasXml (url args) "software" p
+            mkMasXml (site args) (url args) "software" p
         else
             dispatchTemplates args t p
 
@@ -187,9 +189,9 @@ writeHelpPages ext templ fmt p =
     mapM_ (\v -> TIO.writeFile (packageHelpFile ext v) 
         (fmt $ renderHelpTemplate templ v)) (HM.elems $ L.versions p)
 
-mkMasXml :: String -> String -> [L.Package] -> IO ()
-mkMasXml baseUrl f p = writeFile (f ++ ".xml") $ 
-    BS.unpack $ renderMasXml baseUrl p
+mkMasXml :: String -> String -> String -> [L.Package] -> IO ()
+mkMasXml site baseUrl f p = writeFile (f ++ ".xml") $ 
+    BS.unpack $ renderMasXml site baseUrl p
         
 handler :: IO.IOError -> IO ()  
 handler e  
