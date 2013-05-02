@@ -90,12 +90,23 @@ dispatchTemplates args t p = do
             then defTemplDir 
             else templatedir args 
     templates <- ST.directoryGroup templdir :: IO (ST.STGroup T.Text)
+    let page = PageInfo { 
+          fname = fname
+        , title = t
+        , ext = fext
+        , templ = templates
+        }
     case format args of
-        "html" -> writeHtml fname templates t p
-        "rst" -> writePkgs fname templates t htmlToRst p
-        "gitit" -> writePkgs fname templates t (toGitit.htmlToRst) p
+        "html" -> writeHtml page p
+        "rst" -> writePkgs page htmlToRst p
+        "gitit" -> writePkgs page (toGitit.htmlToRst) p
         _ -> error "Invalid output format!"
     where 
+        fext = case format args of
+            "html" -> ".html"
+            "rst" ->  ".rst"
+            "gitit" -> ".page"
+            _ -> error "Invalid output format!"
         fname = mkIndexFileName args
         writeHtml = if mainpage args 
             then writeHtmlListingPage 
@@ -105,19 +116,15 @@ dispatchTemplates args t p = do
             else writeSoftwarePages  
 
 mkIndexFileName args = 
-    let fext = case format args of
-            "html" -> ".html"
-            "rst" ->  ".rst"
-            "gitit" -> ".page"
-            _ -> error "Invalid output format!"
-        catg = category args
-        keyw = keyword args
-        fname  
-            | null catg && null keyw = "index" 
-            | null catg = keyw 
-            | null keyw = catg 
-            | otherwise = catg ++ "_" ++ keyw in
-    fname ++ fext
+    let
+    catg = category args
+    keyw = keyword args 
+    fname  
+        | null catg && null keyw = "index" 
+        | null catg = keyw 
+        | null keyw = catg 
+        | otherwise = catg ++ "_" ++ keyw in
+    fname
 
 getFileExt = dropWhile (/='.')
     
@@ -155,39 +162,49 @@ getPackages ason =
         otherwise -> error "Parsing packages failed"
 
 -- HTML writers --
-writeHtmlSoftwarePages fname templ t pkgs = do
-    TIO.writeFile fname $ renderHtmlListingTemplate templ t pkgs
-    mapM_ (writeHtmlVersionPage templ) pkgs 
-    mapM_ (writeHtmlHelpPages templ) pkgs
+writeHtmlSoftwarePages page p = do
+    TIO.writeFile fn $ renderHtmlListingTemplate page p
+    mapM_ (writeHtmlVersionPage page) p
+    mapM_ (writeHtmlHelpPages page) p
+    where 
+        fn = fname page ++ ext page
 
-writeHtmlListingPage fname templ t p = 
-    TIO.writeFile fname $ renderHtmlListingTemplate templ t p
+writeHtmlListingPage page p = 
+    TIO.writeFile fn $ renderHtmlListingTemplate page p
+    where 
+        fn = fname page ++ ext page
 
-writeHtmlVersionPage templ p = 
-    TIO.writeFile (packageVersionFile ".html" p) $ 
-        renderHtmlVersionTemplate templ p
+writeHtmlVersionPage page p = 
+    TIO.writeFile (packageVersionFileName (ext page) p) $ 
+        renderHtmlVersionTemplate page p
 
-writeHtmlHelpPages templ p = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFile ".html" v) 
-        (renderHtmlHelpTemplate templ v)) (HM.elems $ L.versions p)
+writeHtmlHelpPages page p = 
+    mapM_ (\v -> 
+        let url = T.unpack . packageHelpUrl $ v in
+        if null url || "http" `isPrefixOf` url then return ()
+        else TIO.writeFile (url ++ ext page) (renderHtmlHelpTemplate page v)) 
+        (HM.elems $ L.versions p)
 
 -- Generic writers --
-writeSoftwarePages fname templ t fmt pkgs = do
-    TIO.writeFile fname $ fmt $ renderListingTemplate templ t pkgs
-    let ext = getFileExt fname 
-    mapM_ (writeVersionPage ext templ fmt) pkgs 
-    mapM_ (writeHelpPages ext templ fmt) pkgs
+writeSoftwarePages page fmt p = do
+    TIO.writeFile fn $ fmt $ renderListingTemplate page p
+    mapM_ (writeVersionPage page fmt) p 
+    mapM_ (writeHelpPages page fmt) p
+    where 
+        fn = fname page ++ ext page
 
-writeListingPage fname templ t fmt p = 
-    TIO.writeFile fname $ fmt $ renderListingTemplate templ t p
+writeListingPage page fmt p = 
+    TIO.writeFile fn $ fmt $ renderListingTemplate page p
+    where 
+        fn = fname page ++ ext page
 
-writeVersionPage ext templ fmt p = 
-    TIO.writeFile (packageVersionFile ext p) $ 
-        fmt $ renderVersionTemplate templ p
+writeVersionPage page fmt p = 
+    TIO.writeFile (packageVersionFileName (ext page) p) $ 
+        fmt $ renderVersionTemplate page p
 
-writeHelpPages ext templ fmt p = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFile ext v) 
-        (fmt $ renderHelpTemplate templ v)) (HM.elems $ L.versions p)
+writeHelpPages page fmt p = 
+    mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
+        (fmt $ renderHelpTemplate page v)) (HM.elems $ L.versions p)
 
 mkMasXml :: String -> String -> String -> [L.Package] -> IO ()
 mkMasXml site baseUrl f p = writeFile (f ++ ".xml") $ 
@@ -198,7 +215,7 @@ handler e
     | IO.isDoesNotExistError e =    
         putStrLn "File or directory doesn't exist!"  
     | IO.isPermissionError e = 
-        putStrLn "Permissions denied!"  
+        putStrLn "Permission denied!"  
     | otherwise = ioError e  
 
 ver = showVersion version

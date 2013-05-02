@@ -5,7 +5,8 @@
 
 -- | Generate HTML from Lmod(ualtor) Packages using HStringTemplates.
 module SoftwarePageTemplate (
-      renderListingTemplate
+      PageInfo(..) 
+    , renderListingTemplate
     , renderVersionTemplate
     , renderHelpTemplate
     , renderHtmlListingTemplate
@@ -19,8 +20,8 @@ module SoftwarePageTemplate (
     , htmlToRst
     , packageVersionUrl
     , packageHelpUrl
-    , packageVersionFile
-    , packageHelpFile
+    , packageVersionFileName
+    , packageHelpFileName
     ) where
 
 import Control.Applicative
@@ -33,10 +34,18 @@ import Data.Function (on)
 import Text.Blaze.Html.Renderer.Pretty 
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard
+import Text.Regex.Posix
 import qualified Text.Pandoc as P
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
+
+data PageInfo = PageInfo
+    { fname :: String
+    , title :: String
+    , ext :: String
+    , templ :: STGroup T.Text
+    }
 
 formatPackageList :: [Package] -> [Package]
 formatPackageList = map formatPackage 
@@ -91,43 +100,50 @@ runHelpTemplate t v =
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
     setAttribute "helptext" (helpText v) t
 
-renderHtmlListingTemplate templ tit p = 
-    let Just t = getStringTemplate "page" templ in
+renderHtmlListingTemplate page p = 
+    let Just t = getStringTemplate "page" $ templ page in
     render $
-        setAttribute "ext" (".html" :: String) $ 
-        runListingTemplate t tit p
+        setAttribute "ext" (ext page) $ 
+        runListingTemplate t (title page) p
 
-renderHtmlVersionTemplate templ p = 
-    let Just t = getStringTemplate "page" templ in
+renderHtmlVersionTemplate page p = 
+    let Just t = getStringTemplate "page" $ templ page in
     render $ 
-        setAttribute "ext" (".html" :: String) $ 
+        setAttribute "ext" (ext page) $ 
         runVersionTemplate t p
 
-renderHtmlHelpTemplate templ v = 
-    let Just t = getStringTemplate "page" templ in
+renderHtmlHelpTemplate page v = 
+    let Just t = getStringTemplate "page" $ templ page in
     render $ 
-        setAttribute "ext" (".html" :: String) $ 
+        setAttribute "ext" (ext page) $ 
         runHelpTemplate t v
 
-renderListingTemplate templ tit p = 
-    let Just t = getStringTemplate "package" templ in
-    render $ runListingTemplate t tit p
+renderListingTemplate page p = 
+    let Just t = getStringTemplate "package" (templ page) in
+    render $ runListingTemplate t (title page) p
 
-renderVersionTemplate templ p = 
-    let Just t = getStringTemplate "package" templ in
+renderVersionTemplate page p = 
+    let Just t = getStringTemplate "package" (templ page) in
     render $ runVersionTemplate t p
 
-renderHelpTemplate templ v = 
-    let Just t = getStringTemplate "package" templ in
+renderHelpTemplate page v = 
+    let Just t = getStringTemplate "package" (templ page) in
     render $ runHelpTemplate t v
 
 packageVersionUrl p = toUrl (package p)
 
-packageHelpUrl v = toUrl (fullName v)
+packageHelpUrl v = 
+    let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
+    case g of
+        [s, u] -> if s == "Site" then T.pack u else ""  
+        [] -> toUrl (fullName v)  -- return url to help page to be generated
+    where 
+        t = T.unpack . helpText $ v
+        pat = "(Site|Off-site) help:  *(http://[^ \t]*) *$" :: String
 
-packageVersionFile ext p= T.unpack (toUrl (package p)) ++ ext
+packageVersionFileName ext p= T.unpack (toUrl (package p)) ++ ext
 
-packageHelpFile ext v = T.unpack (toUrl (fullName v)) ++ ext
+packageHelpFileName ext v = T.unpack (toUrl (fullName v)) ++ ext
 
 htmlReplaceMap :: [(T.Text, T.Text)]
 htmlReplaceMap =  
