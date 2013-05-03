@@ -43,7 +43,7 @@ data Version = Version
     { version :: T.Text
     , fullName :: T.Text
     , helpText :: T.Text 
-    , helpPageUrl :: T.Text
+    , helpPageHref :: T.Text
     } deriving (Eq, Show, Data, Typeable)
 
 -- | Packages are packages.

@@ -82,7 +82,7 @@ main = do
             dispatchTemplates args t p
 
 dispatchTemplates :: Flags -> String -> [L.Package] -> IO ()
-dispatchTemplates args t p = do
+dispatchTemplates args t pkgs = do
     defTemplDir <- getDataFileName "templates"
     Except.catch (createDirectoryIfMissing True (dirname args)) handler
     Except.catch (setCurrentDirectory (dirname args)) handler
@@ -96,6 +96,7 @@ dispatchTemplates args t p = do
         , ext = fext
         , templ = templates
         }
+    let p = formatPackageList page pkgs
     case format args of
         "html" -> writeHtml page p
         "rst" -> writePkgs page htmlToRst p
@@ -158,7 +159,7 @@ printKeyword = fmap print $ map L.keywords
 getPackages :: BS.ByteString -> IO [L.Package]
 getPackages ason =
     case (decode ason :: Maybe L.Packages) of
-        Just x -> return $ sortPackages . formatPackageList . L.getPackages $ x
+        Just x -> return $ sortPackages . L.getPackages $ x
         otherwise -> error "Parsing packages failed"
 
 -- HTML writers --
@@ -180,9 +181,10 @@ writeHtmlVersionPage page p =
 
 writeHtmlHelpPages page p = 
     mapM_ (\v -> 
-        let url = T.unpack . packageHelpUrl $ v in
-        if null url || "http" `isPrefixOf` url then return ()
-        else TIO.writeFile (url ++ ext page) (renderHtmlHelpTemplate page v)) 
+        let url = T.unpack . packageHelpUrl page $ v in
+        if null url || "http" `isPrefixOf` url 
+        then return ()
+        else TIO.writeFile url (renderHtmlHelpTemplate page v)) 
         (HM.elems $ L.versions p)
 
 -- Generic writers --
@@ -207,7 +209,10 @@ writeHelpPages page fmt p =
         (fmt $ renderHelpTemplate page v)) (HM.elems $ L.versions p)
 
 mkMasXml :: String -> String -> String -> [L.Package] -> IO ()
-mkMasXml site baseUrl f p = writeFile (f ++ ".xml") $ 
+mkMasXml site baseUrl f pkgs = 
+    let page = PageInfo f site "" ST.nullGroup
+        p = formatPackageList page pkgs in
+    writeFile (f ++ ".xml") $ 
     BS.unpack $ renderMasXml site baseUrl p
         
 handler :: IO.IOError -> IO ()  

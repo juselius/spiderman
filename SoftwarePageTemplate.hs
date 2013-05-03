@@ -47,24 +47,27 @@ data PageInfo = PageInfo
     , templ :: STGroup T.Text
     }
 
-formatPackageList :: [Package] -> [Package]
-formatPackageList = map formatPackage 
+formatPackageList :: PageInfo -> [Package] -> [Package]
+formatPackageList page = map (formatPackage page)
 
-formatPackage :: Package -> Package
-formatPackage p = p 
+formatPackage :: PageInfo -> Package -> Package
+formatPackage page p = p 
     { moduleName = trimPackageName . package $ p
 --     , description = T.take 80 . description $ p
-    , defaultVersion = formatVersion . getDefaultVersion $ p -- ugly
-    , versionPageUrl = packageVersionUrl p
+    , defaultVersion = formatVersion page . getDefaultVersion $ p -- ugly
+    , versionPageUrl = packageVersionUrl p `T.append` T.pack (ext page)
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
-    , versions = HM.map formatVersion $ versions p
+    , versions = HM.map (formatVersion page) $ versions p
     } 
     
-formatVersion v = v 
+formatVersion page v = v 
     { helpText = T.pack . rstToHtml . T.unpack . helpText $ v
-    , helpPageUrl = packageHelpUrl v 
+    , helpPageHref = if url == "" 
+        then ""
+        else "href=\"" `T.append` url `T.append` "\""
     } 
+    where url = packageHelpUrl page v 
 
 trimPackageName pkg =
     let p = T.takeWhile (/='/') . T.reverse $ pkg in
@@ -103,19 +106,16 @@ runHelpTemplate t v =
 renderHtmlListingTemplate page p = 
     let Just t = getStringTemplate "page" $ templ page in
     render $
-        setAttribute "ext" (ext page) $ 
         runListingTemplate t (title page) p
 
 renderHtmlVersionTemplate page p = 
     let Just t = getStringTemplate "page" $ templ page in
     render $ 
-        setAttribute "ext" (ext page) $ 
         runVersionTemplate t p
 
 renderHtmlHelpTemplate page v = 
     let Just t = getStringTemplate "page" $ templ page in
     render $ 
-        setAttribute "ext" (ext page) $ 
         runHelpTemplate t v
 
 renderListingTemplate page p = 
@@ -132,14 +132,16 @@ renderHelpTemplate page v =
 
 packageVersionUrl p = toUrl (package p)
 
-packageHelpUrl v = 
+packageHelpUrl page v = 
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
     case g of
         [s, u] -> if s == "Site" then T.pack u else ""  
-        [] -> toUrl (fullName v)  -- return url to help page to be generated
+        [s, a1, u, a2] -> if s == "Site" then T.pack u else ""  
+        -- return url to help page to be generated
+        [] -> toUrl (fullName v) `T.append` T.pack (ext page)
     where 
         t = T.unpack . helpText $ v
-        pat = "(Site|Off-site) help:  *(http://[^ \t]*) *$" :: String
+        pat = "(Site|Off-site) help: *(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
 
 packageVersionFileName ext p= T.unpack (toUrl (package p)) ++ ext
 
