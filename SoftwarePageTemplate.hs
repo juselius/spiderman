@@ -27,7 +27,7 @@ module SoftwarePageTemplate (
 import Control.Applicative
 import Control.Monad
 import Control.Arrow
-import Lmodulator 
+import LmodPackage 
 import Data.List
 import Data.Char
 import Data.Function (on)

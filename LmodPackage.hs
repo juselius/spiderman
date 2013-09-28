@@ -7,7 +7,7 @@
 -- @ $ \/path\/to\/spider -o softwarePage \/opt\/modulefiles > lmod.json@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
-module Lmodulator where
+module LmodPackage where
 
 import Control.Applicative
 import Control.Monad

@@ -23,7 +23,7 @@ data-files:         templates/*.st,
 
 library 
   exposed-modules:   
-    Lmodulator,
+    LmodPackage,
     SoftwarePageTemplate
     MasXml
   build-depends:     

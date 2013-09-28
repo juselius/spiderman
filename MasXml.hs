@@ -11,7 +11,7 @@ module MasXml (
     , renderMasXml
     ) where
 
-import Lmodulator
+import LmodPackage
 import SoftwarePageTemplate (packageVersionUrl)
 import Data.Monoid
 import Text.XML.Generator 
