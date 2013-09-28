@@ -1,13 +1,12 @@
--- 
 -- (c) jonas.juselius@uit.no, 2013
---
-{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
-
 -- | Parse Lmod JSON into more Haskell types.
+--
 --
 -- The JSON can be generated from Lmod with:
 --
 -- @ $ \/path\/to\/spider -o softwarePage \/opt\/modulefiles > lmod.json@
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
+
 module Lmodulator where
 
 import Control.Applicative
@@ -58,7 +57,7 @@ instance FromJSON Packages where
 instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
-        <*> o .: "displayName" 
+        <*> o .: "displayName"
         <*> o .: "defaultVersionName"
         <*> o .:? "description" .!= "No description" 
         <*> o .:? "url" .!= ""
@@ -85,6 +84,9 @@ instance FromJSON Version where
 
 -- | Fetch the default Version object from a package
 getDefaultVersion p =
-    let Just x = HM.lookup (defaultVersionName p) (versions p) in x
+    let x = HM.lookup (defaultVersionName p) (versions p) 
+    in case x of
+        Just a -> a
+        Nothing -> Version "" "" "" ""
 
 unspace = T.filter (/=' ') 

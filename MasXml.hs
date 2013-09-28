@@ -4,6 +4,8 @@
 -- Note to self: xmlgen does not play well with OverloadedStrings
 -- 
 -- | Generate MetaDoc software page XML for MAPI
+{-# LANGUAGE OverloadedStrings #-}
+
 module MasXml (
       genMasXml
     , renderMasXml
