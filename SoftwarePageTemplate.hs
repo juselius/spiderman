@@ -31,6 +31,7 @@ import Lmodulator
 import Data.List
 import Data.Char
 import Data.Function (on)
+import Text.Regex.Posix
 import Text.Blaze.Html.Renderer.Pretty 
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard
@@ -142,6 +143,11 @@ packageHelpUrl page v =
     where 
         t = T.unpack . helpText $ v
         pat = "(Site|Off-site) help: *(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
+
+-- packageHelpUrl v = 
+--     let (a, b, c , d) = helpText v =~ "See  *(http://[^ \t]*)" :: 
+--         (String,String,String,[String]) in
+--     toUrl (fullName v)
 
 packageVersionFileName ext p= T.unpack (toUrl (package p)) ++ ext
 
