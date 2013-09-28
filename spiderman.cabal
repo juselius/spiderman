@@ -27,13 +27,13 @@ library
     SoftwarePageTemplate
     MasXml
   build-depends:     
-    base >= 4.4 && <= 5.0
+    base 
     , filepath
-    , aeson ==0.6.*
-    , unordered-containers ==0.2.*
-    , bytestring ==0.9.*
-    , text ==0.11.*
-    , vector ==0.10.*
+    , aeson 
+    , unordered-containers 
+    , bytestring 
+    , text 
+    , vector 
     , blaze-html
     , blaze-markup
     , pandoc
@@ -45,12 +45,12 @@ executable spiderman
   main-is:            SpiderMan.hs 
   -- other-modules:       
   build-depends:       
-    base >= 4.4 && <= 5.0
-    , aeson ==0.6.*
-    , unordered-containers ==0.2.*
-    , bytestring ==0.9.*
-    , text ==0.11.*
-    , vector ==0.10.*
+    base 
+    , aeson 
+    , unordered-containers 
+    , bytestring 
+    , text 
+    , vector 
     , cmdargs
     , directory
     , blaze-html
