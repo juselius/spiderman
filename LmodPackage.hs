@@ -14,12 +14,14 @@ import Control.Monad
 import Data.Typeable
 import Data.Data
 import Data.List
+import Data.Maybe
 import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import Debug.Trace (trace)
 
 -- | Lmod package representation
 data Package = Package 
@@ -49,6 +51,10 @@ data Version = Version
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
 instance FromJSON Packages where
+--   parseJSON (Array a) 
+--     | trace (let q = liftM V.toList $ V.mapM parseJSON a :: Parser [Package] in 
+--         let z = liftM (map show) q in
+--         liftM (map (++)) z) False = undefined
   parseJSON (Array a) = do
     pack <- liftM V.toList $ V.mapM parseJSON a :: Parser [Package]
     return $ Packages pack
@@ -72,7 +78,7 @@ instance FromJSON Package where
                 (version x, x)) vl :: Parser (HM.HashMap T.Text Version)
         <*> return ""
         <*> return ""
-        <*> return (Version "" "" "" "") 
+        <*> return noVersion
     parseJSON _ = mzero 
 
 instance FromJSON Version where
@@ -82,11 +88,11 @@ instance FromJSON Version where
         <*> o .:? "help" .!= ""
         <*> return ""
 
+noVersion = Version "" "" "" "" 
+
 -- | Fetch the default Version object from a package
 getDefaultVersion p =
-    let x = HM.lookup (defaultVersionName p) (versions p) 
-    in case x of
-        Just a -> a
-        Nothing -> Version "" "" "" ""
+    let x = HM.lookup (defaultVersionName p) (versions p) in
+    fromMaybe noVersion x
 
 unspace = T.filter (/=' ') 

@@ -12,7 +12,7 @@ module MasXml (
     ) where
 
 import LmodPackage
-import SoftwarePageTemplate (packageVersionUrl)
+import SoftwarePages (packageVersionUrl)
 import Data.Monoid
 import Text.XML.Generator 
 import qualified Data.Text as T
@@ -25,7 +25,7 @@ genMasXml :: T.Text -> T.Text -> [Package] -> Xml Doc
 genMasXml site baseUrl p = doc defaultDocInfo $ 
         xelem "MetaDoc" $
         xattr "version" "1.3.0" <> xattr "site_name" site <#> 
-        (xelem "software" $ xelems $ map (genMasPackageInfo baseUrl) p)
+        xelem "software" (xelems $ map (genMasPackageInfo baseUrl) p)
 
 genMasPackageInfo :: T.Text -> Package -> Xml Elem
 genMasPackageInfo baseUrl p = xelem "sw_entry" $ 

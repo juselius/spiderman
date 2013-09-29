@@ -24,7 +24,7 @@ data-files:         templates/*.st,
 library 
   exposed-modules:   
     LmodPackage,
-    SoftwarePageTemplate
+    SoftwarePages
     MasXml
   build-depends:     
     base 

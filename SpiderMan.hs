@@ -11,8 +11,6 @@
 import Paths_spiderman
 #endif
 
-import SoftwarePageTemplate
-import MasXml
 import Data.Aeson
 import Data.Char
 import Data.List
@@ -20,7 +18,9 @@ import Data.Version
 import System.Directory
 import System.FilePath
 import System.Console.CmdArgs
-import qualified Lmodulator as L
+import MasXml
+import SoftwarePages
+import qualified LmodPackage as L
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
 import qualified System.Environment as Env
@@ -41,6 +41,150 @@ data Flags = Flags {
     , site :: String
     , mainpage :: Bool
     } deriving (Data, Typeable, Show, Eq)
+
+main = do
+    args <- cmdArgs flags
+    ason <- BS.readFile (inpfile args)
+    pkgs <- fmap (filterPackages args) (getPackages ason) 
+    templates <- initializeTemplates (templatedir args)
+    gotoOutdir args
+    dispatchTemplates args pkgs templates
+
+gotoOutdir args = do
+    Except.catch (createDirectoryIfMissing True dir) handler
+    Except.catch (setCurrentDirectory dir) handler
+    where dir = nameOutdir (outdir args) (inpfile args)
+
+initializeTemplates templdir = do
+    defTemplDir <- getDataFileName "templates"
+    let templates = if null templdir
+            then defTemplDir 
+            else templdir
+    ST.directoryGroup templates :: IO (ST.STGroup T.Text)
+
+dispatchTemplates :: Flags -> [L.Package] -> ST.STGroup T.Text -> IO ()
+dispatchTemplates args pkgs templ = 
+    case format args of
+        "html" -> writeHtml p
+        "rst" -> writePkgs htmlToRst p
+        "gitit" -> writePkgs (toGitit . htmlToRst) p
+        "mas" -> writeMasXml (site args) (url args) ("software" ++ ext page) p
+        _ -> error "Invalid output format!"
+    where 
+        page = PageInfo { 
+              title = makeTitle (category args) (keyword args) 
+            , ext = outputFileExt $ format args
+            , mainTemplate = "package"
+            , templates = templ
+            }
+        p = formatPackageList page pkgs
+        fname = nameIndexFile args ++ ext page
+        writeHtml = if mainpage args 
+            then writeListingPage fname 
+                page { mainTemplate = "page" } id
+            else writeSoftwarePages fname 
+                page { mainTemplate = "page" } id
+        writePkgs = if mainpage args 
+            then writeListingPage fname page
+            else writeSoftwarePages fname page 
+
+outputFileExt fmt =
+    case fmt of
+        "html" -> ".html"
+        "rst" ->  ".rst"
+        "gitit" -> ".page"
+        "mas" -> ".xml"
+        _ -> error "Invalid output format!"
+
+nameIndexFile args 
+    | null catg && null keyw = "index" 
+    | null catg = keyw 
+    | null keyw = catg 
+    | otherwise = catg ++ "_" ++ keyw 
+    where
+        catg = category args
+        keyw = keyword args 
+
+nameOutdir dir filename
+    | null dir = takeBaseName filename 
+    | otherwise = dir
+
+getFileExt = dropWhile (/='.')
+    
+makeTitle a b
+    | null a' = p ++ kw
+    | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
+    | a' `isPrefixOf` "library" = "Libraries" ++ kw
+    | a' `isPrefixOf` "compiler" = "Compilers" ++ kw
+    | a' `isPrefixOf` "application" = "Applications" ++ kw
+    | otherwise = p ++ kw
+    where 
+        a' = map toLower a
+        p = "Packages"
+        kw = if null b then "" else ": " ++ b
+
+filterPackages args = 
+    filterCategory (category args) . filterKeyword (keyword args) 
+
+filterCategory x 
+    | null x = id
+    | x == "all" = id
+    | otherwise = filter (\y -> lowerText x `T.isPrefixOf` L.category y) 
+
+filterKeyword x 
+    | null x = id
+    | x == "all" = id
+    | otherwise = filter (any (lowerText x `T.isInfixOf`) . L.keywords)
+
+lowerText = T.toLower . T.pack
+
+printKeyword = fmap print $ map L.keywords
+
+getPackages :: BS.ByteString -> IO [L.Package]
+getPackages ason =
+    case (eitherDecode ason :: Either String L.Packages) of
+        Right x -> return $ sortPackages . L.getPackages $ x
+        Left x -> error ("Parsing packages failed: " ++ x)
+
+skipHelpPage page v
+    | null url || "http" `isPrefixOf` url = False
+    | otherwise = True   
+    where url = T.unpack . packageHelpUrl page $ v
+
+writeSoftwarePages fn page fmt p = do
+    TIO.writeFile fn $ fmt $ renderListingTemplate page p
+    mapM_ (writeVersionPage page fmt) p 
+    mapM_ (writeHelpPages page fmt) p
+
+writeListingPage fn page fmt p = 
+    TIO.writeFile fn $ fmt $ renderListingTemplate page p
+
+writeVersionPage page fmt p = 
+    TIO.writeFile (packageVersionFileName (ext page) p) $ 
+        fmt $ renderVersionTemplate page p
+
+writeHelpPages page fmt p = 
+    mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
+        (fmt $ renderHelpTemplate page v)) vers
+    where 
+        v = HM.elems $ L.versions p
+        vers = if ext page == "html" then 
+            filter (skipHelpPage page) v else 
+            v
+
+writeMasXml :: String -> String -> String -> [L.Package] -> IO ()
+writeMasXml site baseUrl f pkgs = 
+    let page = PageInfo site "" "" ST.nullGroup
+        p = formatPackageList page pkgs in
+    writeFile f $ BS.unpack $ renderMasXml site baseUrl p
+        
+handler :: IO.IOError -> IO ()  
+handler e  
+    | IO.isDoesNotExistError e =    
+        putStrLn "File or directory doesn't exist!"  
+    | IO.isPermissionError e = 
+        putStrLn "Permission denied!"  
+    | otherwise = ioError e  
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
@@ -63,165 +207,6 @@ flags = Flags {
         ,"Create the appropriate JSON file using the 'runspider.sh' script."
         , ""
         ]
-
-dirname args  
-    | null $ outdir args = takeBaseName . inpfile $ args
-    | otherwise = outdir args
-
-main = do
-    args <- cmdArgs flags
-    ason <- BS.readFile (inpfile args)
-    pkgs <- getPackages ason 
-    let 
-        p = filterCategory (category args) . filterKeyword (keyword args) $ 
-            pkgs 
-        t = titulator (category args, keyword args) in
-        if format args == "mas" then 
-            mkMasXml (site args) (url args) "software" p
-        else
-            dispatchTemplates args t p
-
-dispatchTemplates :: Flags -> String -> [L.Package] -> IO ()
-dispatchTemplates args t pkgs = do
-    defTemplDir <- getDataFileName "templates"
-    Except.catch (createDirectoryIfMissing True (dirname args)) handler
-    Except.catch (setCurrentDirectory (dirname args)) handler
-    let templdir = if null $ templatedir args 
-            then defTemplDir 
-            else templatedir args 
-    templates <- ST.directoryGroup templdir :: IO (ST.STGroup T.Text)
-    let page = PageInfo { 
-          fname = fname
-        , title = t
-        , ext = fext
-        , templ = templates
-        }
-    let p = formatPackageList page pkgs
-    case format args of
-        "html" -> writeHtml page p
-        "rst" -> writePkgs page htmlToRst p
-        "gitit" -> writePkgs page (toGitit.htmlToRst) p
-        _ -> error "Invalid output format!"
-    where 
-        fext = case format args of
-            "html" -> ".html"
-            "rst" ->  ".rst"
-            "gitit" -> ".page"
-            _ -> error "Invalid output format!"
-        fname = mkIndexFileName args
-        writeHtml = if mainpage args 
-            then writeHtmlListingPage 
-            else writeHtmlSoftwarePages  
-        writePkgs = if mainpage args 
-            then writeListingPage 
-            else writeSoftwarePages  
-
-mkIndexFileName args = 
-    let
-    catg = category args
-    keyw = keyword args 
-    fname  
-        | null catg && null keyw = "index" 
-        | null catg = keyw 
-        | null keyw = catg 
-        | otherwise = catg ++ "_" ++ keyw in
-    fname
-
-getFileExt = dropWhile (/='.')
-    
-titulator (a, b) 
-    | null a = p ++ kw
-    | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
-    | a' `isPrefixOf` "library" = "Libraries" ++ kw
-    | a' `isPrefixOf` "compiler" = "Compilers" ++ kw
-    | a' `isPrefixOf` "application" = "Applications" ++ kw
-    | otherwise = p ++ kw
-    where 
-        a' = map toLower a
-        p = "Packages"
-        kw = if null b then "" else ": " ++ b
-
-filterCategory x 
-    | null x = id
-    | x == "all" = id
-    | otherwise = filter (\y -> lowerText x `T.isPrefixOf` L.category y) 
-
-
-filterKeyword x 
-    | null x = id
-    | x == "all" = id
-    | otherwise = filter (any (lowerText x `T.isInfixOf`) . L.keywords)
-
-lowerText = T.toLower . T.pack
-
-printKeyword = fmap print $ map L.keywords
-
-getPackages :: BS.ByteString -> IO [L.Package]
-getPackages ason =
-    case (decode ason :: Maybe L.Packages) of
-        Just x -> return $ sortPackages . L.getPackages $ x
-        otherwise -> error "Parsing packages failed"
-
--- HTML writers --
-writeHtmlSoftwarePages page p = do
-    TIO.writeFile fn $ renderHtmlListingTemplate page p
-    mapM_ (writeHtmlVersionPage page) p
-    mapM_ (writeHtmlHelpPages page) p
-    where 
-        fn = fname page ++ ext page
-
-writeHtmlListingPage page p = 
-    TIO.writeFile fn $ renderHtmlListingTemplate page p
-    where 
-        fn = fname page ++ ext page
-
-writeHtmlVersionPage page p = 
-    TIO.writeFile (packageVersionFileName (ext page) p) $ 
-        renderHtmlVersionTemplate page p
-
-writeHtmlHelpPages page p = 
-    mapM_ (\v -> 
-        let url = T.unpack . packageHelpUrl page $ v in
-        if null url || "http" `isPrefixOf` url 
-        then return ()
-        else TIO.writeFile url (renderHtmlHelpTemplate page v)) 
-        (HM.elems $ L.versions p)
-
--- Generic writers --
-writeSoftwarePages page fmt p = do
-    TIO.writeFile fn $ fmt $ renderListingTemplate page p
-    mapM_ (writeVersionPage page fmt) p 
-    mapM_ (writeHelpPages page fmt) p
-    where 
-        fn = fname page ++ ext page
-
-writeListingPage page fmt p = 
-    TIO.writeFile fn $ fmt $ renderListingTemplate page p
-    where 
-        fn = fname page ++ ext page
-
-writeVersionPage page fmt p = 
-    TIO.writeFile (packageVersionFileName (ext page) p) $ 
-        fmt $ renderVersionTemplate page p
-
-writeHelpPages page fmt p = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
-        (fmt $ renderHelpTemplate page v)) (HM.elems $ L.versions p)
-
-mkMasXml :: String -> String -> String -> [L.Package] -> IO ()
-mkMasXml site baseUrl f pkgs = 
-    let page = PageInfo f site "" ST.nullGroup
-        p = formatPackageList page pkgs in
-    writeFile (f ++ ".xml") $ 
-    BS.unpack $ renderMasXml site baseUrl p
-        
-handler :: IO.IOError -> IO ()  
-handler e  
-    | IO.isDoesNotExistError e =    
-        putStrLn "File or directory doesn't exist!"  
-    | IO.isPermissionError e = 
-        putStrLn "Permission denied!"  
-    | otherwise = ioError e  
 
 ver = showVersion version
 

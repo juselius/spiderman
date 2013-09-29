@@ -4,14 +4,11 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
 -- | Generate HTML from Lmod(ualtor) Packages using HStringTemplates.
-module SoftwarePageTemplate (
+module SoftwarePages (
       PageInfo(..) 
     , renderListingTemplate
     , renderVersionTemplate
     , renderHelpTemplate
-    , renderHtmlListingTemplate
-    , renderHtmlVersionTemplate
-    , renderHtmlHelpTemplate
     , formatPackageList
     , sortPackages
     , toUrl
@@ -35,17 +32,16 @@ import Text.Regex.Posix
 import Text.Blaze.Html.Renderer.Pretty 
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard
-import Text.Regex.Posix
 import qualified Text.Pandoc as P
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
 
 data PageInfo = PageInfo
-    { fname :: String
-    , title :: String
+    { title :: String
     , ext :: String
-    , templ :: STGroup T.Text
+    , mainTemplate :: String
+    , templates :: STGroup T.Text
     }
 
 formatPackageList :: PageInfo -> [Package] -> [Package]
@@ -89,7 +85,7 @@ rstToHtml =  P.writeHtmlString P.def . P.readRST P.def
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
-sortPackages p = sortBy (compare `on` T.toLower . displayName) $ p 
+sortPackages = sortBy (compare `on` T.toLower . displayName)  
 
 runListingTemplate t tit p = 
     setAttribute "pagetitle" tit $ 
@@ -104,31 +100,16 @@ runHelpTemplate t v =
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
     setAttribute "helptext" (helpText v) t
 
-renderHtmlListingTemplate page p = 
-    let Just t = getStringTemplate "page" $ templ page in
-    render $
-        runListingTemplate t (title page) p
-
-renderHtmlVersionTemplate page p = 
-    let Just t = getStringTemplate "page" $ templ page in
-    render $ 
-        runVersionTemplate t p
-
-renderHtmlHelpTemplate page v = 
-    let Just t = getStringTemplate "page" $ templ page in
-    render $ 
-        runHelpTemplate t v
-
 renderListingTemplate page p = 
-    let Just t = getStringTemplate "package" (templ page) in
+    let Just t = getStringTemplate (mainTemplate page) (templates page) in
     render $ runListingTemplate t (title page) p
 
 renderVersionTemplate page p = 
-    let Just t = getStringTemplate "package" (templ page) in
+    let Just t = getStringTemplate (mainTemplate page) (templates page) in
     render $ runVersionTemplate t p
 
 renderHelpTemplate page v = 
-    let Just t = getStringTemplate "package" (templ page) in
+    let Just t = getStringTemplate (mainTemplate page) (templates page) in
     render $ runHelpTemplate t v
 
 packageVersionUrl p = toUrl (package p)
