@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                spiderman
-version:             0.1.0.0
+version:             1.0.0.0
 synopsis:            Lmod to software page
 -- description:         
 homepage:            https://github.com/bakerjonas/spiderman 
@@ -15,35 +15,42 @@ maintainer:          jonas.juselius@uit.no
 build-type:          Simple
 cabal-version:       >=1.8
 
+extra-source-files: README.rst
+data-dir:           data
+data-files:         templates/*.st, 
+                    img/*.png, img/icons/*.png
+                    css/*.css
+
 library 
   exposed-modules:   
-    Lmodulator,
-    SoftwarePage
+    LmodPackage,
+    SoftwarePages
     MasXml
   build-depends:     
-    base ==4.5.*
+    base 
     , filepath
-    , aeson ==0.6.*
-    , unordered-containers ==0.2.*
-    , bytestring ==0.9.*
-    , text ==0.11.*
-    , vector ==0.10.*
+    , aeson 
+    , unordered-containers 
+    , bytestring 
+    , text 
+    , vector 
     , blaze-html
     , blaze-markup
     , pandoc
     , xmlgen
     , HStringTemplate
+    , regex-posix
 
 executable spiderman
   main-is:            SpiderMan.hs 
   -- other-modules:       
   build-depends:       
-    base ==4.5.*
-    , aeson ==0.6.*
-    , unordered-containers ==0.2.*
-    , bytestring ==0.9.*
-    , text ==0.11.*
-    , vector ==0.10.*
+    base 
+    , aeson 
+    , unordered-containers 
+    , bytestring 
+    , text 
+    , vector 
     , cmdargs
     , directory
     , blaze-html
@@ -52,3 +59,7 @@ executable spiderman
     , pandoc
     , xmlgen
     , HStringTemplate
+    , regex-posix
+  other-modules: Paths_spiderman
+  cpp-options: -DCABAL_BUILD
+

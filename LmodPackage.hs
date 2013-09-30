@@ -1,26 +1,27 @@
--- 
 -- (c) jonas.juselius@uit.no, 2013
---
-{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
-
 -- | Parse Lmod JSON into more Haskell types.
+--
 --
 -- The JSON can be generated from Lmod with:
 --
 -- @ $ \/path\/to\/spider -o softwarePage \/opt\/modulefiles > lmod.json@
-module Lmodulator where
+{-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
+
+module LmodPackage where
 
 import Control.Applicative
 import Control.Monad
 import Data.Typeable
 import Data.Data
 import Data.List
+import Data.Maybe
 import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import Debug.Trace (trace)
 
 -- | Lmod package representation
 data Package = Package 
@@ -43,13 +44,17 @@ data Version = Version
     { version :: T.Text
     , fullName :: T.Text
     , helpText :: T.Text 
-    , helpPageUrl :: T.Text
+    , helpPageHref :: T.Text
     } deriving (Eq, Show, Data, Typeable)
 
 -- | Packages are packages.
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
 instance FromJSON Packages where
+--   parseJSON (Array a) 
+--     | trace (let q = liftM V.toList $ V.mapM parseJSON a :: Parser [Package] in 
+--         let z = liftM (map show) q in
+--         liftM (map (++)) z) False = undefined
   parseJSON (Array a) = do
     pack <- liftM V.toList $ V.mapM parseJSON a :: Parser [Package]
     return $ Packages pack
@@ -58,7 +63,7 @@ instance FromJSON Packages where
 instance FromJSON Package where
     parseJSON (Object o) = 
         Package <$> o .: "package"
-        <*> o .: "displayName" 
+        <*> o .: "displayName"
         <*> o .: "defaultVersionName"
         <*> o .:? "description" .!= "No description" 
         <*> o .:? "url" .!= ""
@@ -73,7 +78,7 @@ instance FromJSON Package where
                 (version x, x)) vl :: Parser (HM.HashMap T.Text Version)
         <*> return ""
         <*> return ""
-        <*> return (Version "" "" "" "") 
+        <*> return noVersion
     parseJSON _ = mzero 
 
 instance FromJSON Version where
@@ -83,8 +88,11 @@ instance FromJSON Version where
         <*> o .:? "help" .!= ""
         <*> return ""
 
+noVersion = Version "" "" "" "" 
+
 -- | Fetch the default Version object from a package
 getDefaultVersion p =
-    let Just x = HM.lookup (defaultVersionName p) (versions p) in x
+    let x = HM.lookup (defaultVersionName p) (versions p) in
+    fromMaybe noVersion x
 
 unspace = T.filter (/=' ') 

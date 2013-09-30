@@ -24,13 +24,14 @@ Make sure you have Haskell Platform installed:
 
 Install the prerequisites::
 
+    $ cabal update
     $ cabal install --only-dependencies
 
 Run SiderMan::
 
     $ runhaskell SpiderMan.hs --help
-    $ ./data/examples/runspider.sh /path/to/modulefiles/{Core,Apps,...} > modules.json
-    $ runhaskell SpiderMan.sh modules.json
+    $ ./examples/runspider.sh /path/to/modulefiles/{Core,Apps,...} > modules.json
+    $ runhaskell SpiderMan.hs modules.json
     $ xdg-open modules/index.html
 
 If you want to nicely formatted pages, you need to install the files in 
@@ -42,10 +43,9 @@ Building
 For better performance and faster startup you might want to compile and
 install spiderman (see the cabal documentation for the details)::
 
-    ($ cabal install --only-dependencies)
-    $ cabal configure
-    $ cabal build
     $ cabal install
+    or
+    $ sudo cabal install --global
 
 Disclaimer
 ~~~~~~~~~~~

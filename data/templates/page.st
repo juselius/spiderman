@@ -24,8 +24,10 @@
         <div id="sidebar" class="yui-b first">
           $logo()$
           $sitenav()$
+          $if(pagetools)$
+            $pagetools()$
+          $endif$
         </div>
     </div>
-    $javascripts$
   </body>
 </html>
