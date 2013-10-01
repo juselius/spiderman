@@ -33,5 +33,6 @@ $elseif(versions)$
     }$
     </table>
 $elseif(helptext)$
+    <h4>List of <a href="$it.versionPageUrl$">available versions</a></h4>
     $helptext$
 $endif$
