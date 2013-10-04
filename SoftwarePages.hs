@@ -109,7 +109,8 @@ runVersionTemplate page =
 
 runHelpTemplate page v = 
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
-    setAttribute "helptext" (helpText v) t
+    setAttribute "helptext" (helpText v) $
+    setAttribute "versionPageUrl" (packageVersionUrl (pkg page)) t
     where 
         t = mainTemplate page
 
