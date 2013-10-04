@@ -20,6 +20,7 @@ import System.FilePath
 import System.Console.CmdArgs
 import MasXml
 import SoftwarePages
+import LmodPackage (emptyPackage)
 import qualified LmodPackage as L
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
@@ -75,7 +76,7 @@ dispatchTemplates args pkgs templ =
               title = makeTitle (category args) (keyword args) 
             , ext = outputFileExt $ format args
             , mainTemplate = getMainTemplate args templ
-            , pkg = undefined
+            , pkg = emptyPackage
             }
         p = formatPackageList page pkgs
         fname = nameIndexFile args ++ ext page

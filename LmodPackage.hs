@@ -32,10 +32,10 @@ data Package = Package
     , infoUrl :: T.Text
     , license :: T.Text
     , category  :: T.Text
-    , keywords :: [T.Text]
-    , versions :: HM.HashMap T.Text Version
     , moduleName :: T.Text
     , versionPageUrl :: T.Text
+    , keywords :: [T.Text]
+    , versions :: HM.HashMap T.Text Version
     , defaultVersion :: Version
     } deriving (Eq, Show, Data, Typeable)
  
@@ -68,6 +68,8 @@ instance FromJSON Package where
         <*> o .:? "url" .!= ""
         <*> o .:? "license" .!= ""
         <*> liftM T.toLower (o .:? "categories" .!= "") 
+        <*> return ""
+        <*> return ""
         <*> liftM (map T.strip . T.splitOn (T.pack ",") . T.toLower) 
             (o .:? "keywords" .!= "")
         <*> do  
@@ -75,9 +77,7 @@ instance FromJSON Package where
             vl <- liftM V.toList $ V.mapM parseJSON v :: Parser [Version]
             return $ HM.fromList $ map (\x -> 
                 (version x, x)) vl :: Parser (HM.HashMap T.Text Version)
-        <*> return ""
-        <*> return ""
-        <*> return noVersion
+        <*> return emptyVersion
     parseJSON _ = mzero 
 
 instance FromJSON Version where
@@ -87,11 +87,15 @@ instance FromJSON Version where
         <*> o .:? "help" .!= ""
         <*> return ""
 
-noVersion = Version "" "" "" "" 
+emptyPackage = Package T.empty T.empty T.empty T.empty T.empty 
+    T.empty T.empty T.empty T.empty [T.empty] 
+    (HM.fromList [(T.empty, emptyVersion)]) emptyVersion
+
+emptyVersion = Version T.empty T.empty T.empty T.empty 
 
 -- | Fetch the default Version object from a package
 getDefaultVersion p =
     let x = HM.lookup (defaultVersionName p) (versions p) in
-    fromMaybe noVersion x
+    fromMaybe emptyVersion x
 
 unspace = T.filter (/=' ') 

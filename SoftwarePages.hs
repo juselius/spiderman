@@ -45,7 +45,8 @@ data PageInfo = PageInfo
     }
 
 formatPackageList :: PageInfo -> [Package] -> [PageInfo]
-formatPackageList page = map (\p -> formatPackage page { pkg = p})
+formatPackageList page [] = [page { pkg = emptyPackage }]
+formatPackageList page pkgs = map (\p -> formatPackage page { pkg = p }) pkgs
 
 formatPackage :: PageInfo -> PageInfo
 formatPackage page = page { pkg = p
@@ -92,33 +93,39 @@ htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 sortPackages = sortBy (compare `on` T.toLower . displayName)  
 
 runListingTemplate pages = 
-    setAttribute "pagetitle" tit $ 
-    setAttribute "packages" p t
+    setAttribute "pagetitle" tit
+    $ setAttribute "packages" p
+    $ templ
     where 
-        t = mainTemplate (head pages)
+        templ = mainTemplate (head pages)
         tit = title (head pages)
         p = map pkg pages
     
 runVersionTemplate page = 
-    setAttribute "pagetitle" ("Package " `T.append` package p) $ 
-    setAttribute "versions" (versions p) $
-    setAttribute "keywords" (keywords p) t 
+    setAttribute "pagetitle" ("Package " `T.append` package p) 
+    $ setAttribute "versions" (versions p) 
+    $ setAttribute "keywords" (keywords p)
+    $ setAttribute "package" (pkg page)  
+    $ setAttribute "ext" (ext page)  
+    $ templ
     where 
-        t = mainTemplate page
+        templ = mainTemplate page
         p = pkg page
 
 runHelpTemplate page v = 
-    setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
-    setAttribute "helptext" (helpText v) $
-    setAttribute "versionPageUrl" (packageVersionUrl (pkg page)) t
+    setAttribute "pagetitle" ("Module " `T.append` fullName v) 
+    $ setAttribute "helptext" (helpText v) 
+    $ setAttribute "package" (pkg page)  
+    $ setAttribute "ext" (ext page)  
+    $ templ
     where 
-        t = mainTemplate page
+        templ = mainTemplate page
 
 renderListingTemplate pages = render $ runListingTemplate pages
 
-renderVersionTemplate pages = render $ runVersionTemplate pages 
+renderVersionTemplate page = render $ runVersionTemplate page
 
-renderHelpTemplate pages v = render $ runHelpTemplate pages v
+renderHelpTemplate page v = render $ runHelpTemplate page v
 
 packageVersionUrl p = toUrl (package p)
 
