@@ -50,14 +50,23 @@ data Version = Version
 -- | Packages are packages.
 newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
+
 instance FromJSON Packages where
---   parseJSON (Array a) 
---     | trace (let q = V.map fromJSON a :: V.Vector (Result Package) in 
---         show q) False = undefined
+  parseJSON (Array a) 
+    | trace (let q = V.map fromJSON a :: V.Vector (Result Package) in 
+        errorToWarn $ V.filter isError q) False = undefined
   parseJSON (Array a) = do
-    pack <- liftM V.toList $ V.mapM parseJSON a :: Parser [Package]
-    return $ Packages pack
+    pack <- return $ V.toList (V.map fromJSON a) :: Parser [Result Package]
+    return $ Packages $ map fromSuccess $ filter (not . isError) pack
   parseJSON _ = mzero
+
+errorToWarn list =
+    init $ V.foldl (\s (Error x) -> s ++ "Warning: " ++ x  ++ "\n") "" list
+
+fromSuccess (Success x) = x
+
+isError (Error x) = True
+isError (Success x) = False
 
 instance FromJSON Package where
     parseJSON (Object o) = 

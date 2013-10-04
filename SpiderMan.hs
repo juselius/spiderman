@@ -58,10 +58,8 @@ gotoOutdir args = do
 
 initializeTemplates templdir = do
     defTemplDir <- getDataFileName "templates"
-    let templates = if null templdir
-            then defTemplDir 
-            else templdir
-    ST.directoryGroup templates :: IO (ST.STGroup T.Text)
+    let templates = if null templdir then defTemplDir else templdir in
+        ST.directoryGroup templates :: IO (ST.STGroup T.Text)
 
 dispatchTemplates :: Flags -> [L.Package] -> ST.STGroup T.Text -> IO ()
 dispatchTemplates args pkgs templ = 
@@ -87,13 +85,13 @@ dispatchTemplates args pkgs templ =
             then writeListingPage fname 
             else writeSoftwarePages fname 
 
-getMainTemplate args templ =
+getMainTemplate args templs =
     case format args of
-        "html" -> getTemplate "page" templ 
-        _ -> getTemplate "package" templ
+        "html" -> getTemplate "page" templs
+        _ -> getTemplate "package" templs
 
-getTemplate name templ =
-    case ST.getStringTemplate name templ of
+getTemplate name templs =
+    case ST.getStringTemplate name templs of
         Just t -> t
         Nothing -> error "Invalid template"
 
@@ -160,21 +158,21 @@ skipHelpPage page v
     | otherwise = True   
     where url = T.unpack . packageHelpUrl page $ v
 
-writeSoftwarePages fn fmt pages = do
-    TIO.writeFile fn . fmt $ renderListingTemplate pages
-    mapM_ (writeVersionPage fmt) pages
-    mapM_ (writeHelpPages fmt) pages
+writeSoftwarePages fn formatter pages = do
+    TIO.writeFile fn . formatter $ renderListingTemplate pages
+    mapM_ (writeVersionPage formatter) pages
+    mapM_ (writeHelpPages formatter) pages
 
-writeListingPage fn fmt page = 
-    TIO.writeFile fn . fmt $ renderListingTemplate page
+writeListingPage fn formatter page = 
+    TIO.writeFile fn . formatter $ renderListingTemplate page
 
-writeVersionPage fmt page = 
+writeVersionPage formatter page = 
     TIO.writeFile (packageVersionFileName page) $ 
-        fmt $ renderVersionTemplate page 
+        formatter $ renderVersionTemplate page 
 
-writeHelpPages fmt page = 
+writeHelpPages formatter page = 
     mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
-        (fmt $ renderHelpTemplate page v)) vers
+        (formatter $ renderHelpTemplate page v)) vers
     where 
         v = HM.elems $ L.versions (pkg page)
         vers = if ext page == "html" then 
