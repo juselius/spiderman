@@ -74,19 +74,27 @@ dispatchTemplates args pkgs templ =
         page = PageInfo { 
               title = makeTitle (category args) (keyword args) 
             , ext = outputFileExt $ format args
-            , mainTemplate = "package"
-            , templates = templ
+            , mainTemplate = getMainTemplate args templ
+            , pkg = undefined
             }
         p = formatPackageList page pkgs
         fname = nameIndexFile args ++ ext page
         writeHtml = if mainpage args 
-            then writeListingPage fname 
-                page { mainTemplate = "page" } id
-            else writeSoftwarePages fname 
-                page { mainTemplate = "page" } id
+            then writeListingPage fname id
+            else writeSoftwarePages fname id
         writePkgs = if mainpage args 
-            then writeListingPage fname page
-            else writeSoftwarePages fname page 
+            then writeListingPage fname 
+            else writeSoftwarePages fname 
+
+getMainTemplate args templ =
+    case format args of
+        "html" -> getTemplate "page" templ 
+        _ -> getTemplate "package" templ
+
+getTemplate name templ =
+    case ST.getStringTemplate name templ of
+        Just t -> t
+        Nothing -> error "Invalid template"
 
 outputFileExt fmt =
     case fmt of
@@ -151,32 +159,32 @@ skipHelpPage page v
     | otherwise = True   
     where url = T.unpack . packageHelpUrl page $ v
 
-writeSoftwarePages fn page fmt p = do
-    TIO.writeFile fn $ fmt $ renderListingTemplate page p
-    mapM_ (writeVersionPage page fmt) p 
-    mapM_ (writeHelpPages page fmt) p
+writeSoftwarePages fn fmt pages = do
+    TIO.writeFile fn . fmt $ renderListingTemplate pages
+    mapM_ (writeVersionPage fmt) pages
+    mapM_ (writeHelpPages fmt) pages
 
-writeListingPage fn page fmt p = 
-    TIO.writeFile fn $ fmt $ renderListingTemplate page p
+writeListingPage fn fmt page = 
+    TIO.writeFile fn . fmt $ renderListingTemplate page
 
-writeVersionPage page fmt p = 
-    TIO.writeFile (packageVersionFileName (ext page) p) $ 
-        fmt $ renderVersionTemplate page p
+writeVersionPage fmt page = 
+    TIO.writeFile (packageVersionFileName page) $ 
+        fmt $ renderVersionTemplate page 
 
-writeHelpPages page fmt p = 
+writeHelpPages fmt page = 
     mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
         (fmt $ renderHelpTemplate page v)) vers
     where 
-        v = HM.elems $ L.versions p
+        v = HM.elems $ L.versions (pkg page)
         vers = if ext page == "html" then 
-            filter (skipHelpPage page) v else 
-            v
+            filter (skipHelpPage page) v else v
 
-writeMasXml :: String -> String -> String -> [L.Package] -> IO ()
-writeMasXml site baseUrl f pkgs = 
-    let page = PageInfo site "" "" ST.nullGroup
-        p = formatPackageList page pkgs in
+writeMasXml :: String -> String -> String -> [PageInfo] -> IO ()
+writeMasXml site baseUrl f pages = 
+--     let page = PageInfo site "" "" (ST.StringTemplate "")
+--         p = formatPackageList page pkgs in
     writeFile f $ BS.unpack $ renderMasXml site baseUrl p
+    where p = map pkg pages
         
 handler :: IO.IOError -> IO ()  
 handler e  

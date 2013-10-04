@@ -40,23 +40,26 @@ import qualified Data.HashMap.Strict as HM
 data PageInfo = PageInfo
     { title :: String
     , ext :: String
-    , mainTemplate :: String
-    , templates :: STGroup T.Text
+    , mainTemplate :: StringTemplate T.Text
+    , pkg :: Package
     }
 
-formatPackageList :: PageInfo -> [Package] -> [Package]
-formatPackageList page = map (formatPackage page)
+formatPackageList :: PageInfo -> [Package] -> [PageInfo]
+formatPackageList page = map (\p -> formatPackage page { pkg = p})
 
-formatPackage :: PageInfo -> Package -> Package
-formatPackage page p = p 
+formatPackage :: PageInfo -> PageInfo
+formatPackage page = page { pkg = p
     { moduleName = trimPackageName . package $ p
 --     , description = T.take 80 . description $ p
-    , defaultVersion = formatVersion page . getDefaultVersion $ p -- ugly
+    , defaultVersion = formatVersion page defaultVersion
     , versionPageUrl = packageVersionUrl p `T.append` T.pack (ext page)
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
     , versions = HM.map (formatVersion page) $ versions p
-    } 
+    }}
+    where 
+        p = pkg page
+        defaultVersion = getDefaultVersion p 
     
 formatVersion page v = v 
     { helpText = T.pack . rstToHtml . T.unpack . helpText $ v
@@ -64,7 +67,8 @@ formatVersion page v = v
         then ""
         else "href=\"" `T.append` url `T.append` "\""
     } 
-    where url = packageHelpUrl page v 
+    where 
+        url = packageHelpUrl page v 
 
 trimPackageName pkg =
     let p = T.takeWhile (/='/') . T.reverse $ pkg in
@@ -87,30 +91,33 @@ htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
 sortPackages = sortBy (compare `on` T.toLower . displayName)  
 
-runListingTemplate t tit p = 
+runListingTemplate pages = 
     setAttribute "pagetitle" tit $ 
     setAttribute "packages" p t
+    where 
+        t = mainTemplate (head pages)
+        tit = title (head pages)
+        p = map pkg pages
     
-runVersionTemplate t p = 
+runVersionTemplate page = 
     setAttribute "pagetitle" ("Package " `T.append` package p) $ 
     setAttribute "versions" (versions p) $
     setAttribute "keywords" (keywords p) t 
+    where 
+        t = mainTemplate page
+        p = pkg page
 
-runHelpTemplate t v = 
+runHelpTemplate page v = 
     setAttribute "pagetitle" ("Module " `T.append` fullName v) $ 
     setAttribute "helptext" (helpText v) t
+    where 
+        t = mainTemplate page
 
-renderListingTemplate page p = 
-    let Just t = getStringTemplate (mainTemplate page) (templates page) in
-    render $ runListingTemplate t (title page) p
+renderListingTemplate pages = render $ runListingTemplate pages
 
-renderVersionTemplate page p = 
-    let Just t = getStringTemplate (mainTemplate page) (templates page) in
-    render $ runVersionTemplate t p
+renderVersionTemplate pages = render $ runVersionTemplate pages 
 
-renderHelpTemplate page v = 
-    let Just t = getStringTemplate (mainTemplate page) (templates page) in
-    render $ runHelpTemplate t v
+renderHelpTemplate pages v = render $ runHelpTemplate pages v
 
 packageVersionUrl p = toUrl (package p)
 
@@ -123,14 +130,17 @@ packageHelpUrl page v =
         [] -> toUrl (fullName v) `T.append` T.pack (ext page)
     where 
         t = T.unpack . helpText $ v
-        pat = "(Site|Off-site) help: *(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
+        pat = "(Site|Off-site) help:" ++ 
+            "*(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
 
 -- packageHelpUrl v = 
 --     let (a, b, c , d) = helpText v =~ "See  *(http://[^ \t]*)" :: 
 --         (String,String,String,[String]) in
 --     toUrl (fullName v)
 
-packageVersionFileName ext p= T.unpack (toUrl (package p)) ++ ext
+packageVersionFileName page = 
+    T.unpack (toUrl (package p)) ++ ext page
+    where p = pkg page
 
 packageHelpFileName ext v = T.unpack (toUrl (fullName v)) ++ ext
 

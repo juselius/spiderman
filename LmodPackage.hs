@@ -52,9 +52,8 @@ newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
 
 instance FromJSON Packages where
 --   parseJSON (Array a) 
---     | trace (let q = liftM V.toList $ V.mapM parseJSON a :: Parser [Package] in 
---         let z = liftM (map show) q in
---         liftM (map (++)) z) False = undefined
+--     | trace (let q = V.map fromJSON a :: V.Vector (Result Package) in 
+--         show q) False = undefined
   parseJSON (Array a) = do
     pack <- liftM V.toList $ V.mapM parseJSON a :: Parser [Package]
     return $ Packages pack
