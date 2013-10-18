@@ -46,9 +46,9 @@ data Flags = Flags {
 main = do
     args <- cmdArgs flags
     ason <- BS.readFile (inpfile args)
-    pkgs <- fmap (filterPackages args) (getPackages ason) 
     templates <- initializeTemplates (templatedir args)
     gotoOutdir args
+    pkgs <- fmap (filterPackages args) (decodePackages ason)
     dispatchTemplates args pkgs templates
 
 gotoOutdir args = do
@@ -147,11 +147,22 @@ lowerText = T.toLower . T.pack
 
 printKeyword = fmap print $ map L.keywords
 
-getPackages :: BS.ByteString -> IO [L.Package]
-getPackages ason =
-    case (eitherDecode ason :: Either String L.Packages) of
-        Right x -> return $ sortPackages . L.getPackages $ x
-        Left x -> error ("Parsing packages failed: " ++ x)
+decodePackages :: BS.ByteString -> IO [L.Package]
+decodePackages ason =
+    case decode ason of
+        Just x -> let failed = L.failures x in
+            if length failed > 0
+            then do putStrLn $ warnFailed failed
+                    return $ goodPackages x
+            else return $ goodPackages x
+        Nothing -> error "Parsing failed."
+
+goodPackages = sortPackages . L.packages
+
+warnFailed flist = init $ foldl (\s (n, w) -> s
+    ++ "Record " ++ show n ++ ": "
+    ++ w
+    ++ "\n") "" flist
 
 skipHelpPage page v
     | null url || "http" `isPrefixOf` url = False

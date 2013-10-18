@@ -21,7 +21,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import Debug.Trace (trace)
 
 -- | Lmod package representation
 data Package = Package 
@@ -47,26 +46,28 @@ data Version = Version
     , helpPageHref :: T.Text
     } deriving (Eq, Show, Data, Typeable)
 
+type RecNo = Int
+
 -- | Packages are packages.
-newtype Packages = Packages {getPackages :: [Package]} deriving(Eq, Show)
+data Packages = Packages
+    { packages :: [Package]
+    , failures :: [(RecNo, String)]
+    } deriving(Eq, Show)
 
 
 instance FromJSON Packages where
-  parseJSON (Array a) 
-    | trace (let q = V.map fromJSON a :: V.Vector (Result Package) in 
-        errorToWarn $ V.filter isError q) False = undefined
   parseJSON (Array a) = do
     pack <- return $ V.toList (V.map fromJSON a) :: Parser [Result Package]
-    return $ Packages $ map fromSuccess $ filter (not . isError) pack
+    let good = map (\(Success x) -> x) $ filter isSuccess pack
+        bad = map (\(n, Error x) -> (n, x)) $ filter isFailed (zip [1..] pack)
+    return $ Packages good bad
   parseJSON _ = mzero
 
-errorToWarn list =
-    init $ V.foldl (\s (Error x) -> s ++ "Warning: " ++ x  ++ "\n") "" list
+isFailed (_, Error _) = True
+isFailed _ = False
 
-fromSuccess (Success x) = x
-
-isError (Error x) = True
-isError (Success x) = False
+isSuccess (Success _) = True
+isSuccess (Error _) = False
 
 instance FromJSON Package where
     parseJSON (Object o) = 
