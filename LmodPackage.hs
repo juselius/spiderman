@@ -54,7 +54,6 @@ data Packages = Packages
     , failures :: [(RecNo, String)]
     } deriving(Eq, Show)
 
-
 instance FromJSON Packages where
   parseJSON (Array a) = do
     pack <- return $ V.toList (V.map fromJSON a) :: Parser [Result Package]

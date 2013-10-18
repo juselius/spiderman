@@ -50,6 +50,7 @@ main = do
     gotoOutdir args
     pkgs <- fmap (filterPackages args) (decodePackages ason)
     dispatchTemplates args pkgs templates
+    putStrLn $ "*** Processed " ++ show (length pkgs) ++  " packages."
 
 gotoOutdir args = do
     Except.catch (createDirectoryIfMissing True dir) handler
