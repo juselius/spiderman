@@ -38,7 +38,7 @@ library
     , blaze-markup
     , pandoc
     , xmlgen
-    , HStringTemplate
+    , Hamlet
     , regex-posix
 
 executable spiderman
@@ -58,7 +58,7 @@ executable spiderman
     , filepath
     , pandoc
     , xmlgen
-    , HStringTemplate
+    , Hamlet
     , regex-posix
   other-modules: Paths_spiderman
   cpp-options: -DCABAL_BUILD

@@ -1,7 +1,9 @@
 --
 -- (c) jonas.juselius@uit.no, 2013
 --
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 -- | Generate HTML from Lmod(ualtor) Packages using HStringTemplates.
 module SoftwarePages (
@@ -21,17 +23,16 @@ module SoftwarePages (
     , packageHelpFileName
     ) where
 
+import LmodPackage 
 import Control.Applicative
 import Control.Monad
 import Control.Arrow
-import LmodPackage 
 import Data.List
 import Data.Char
 import Data.Function (on)
 import Text.Regex.Posix
-import Text.Blaze.Html.Renderer.Pretty 
-import Text.StringTemplate
-import Text.StringTemplate.GenericStandard
+import Text.Blaze.Html.Renderer.Pretty (renderHtml)
+import Text.Hamlet (hamlet)
 import qualified Text.Pandoc as P
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
