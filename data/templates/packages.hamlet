@@ -1,0 +1,12 @@
+<table>
+    <tr>
+    <td>Program
+    <td>Module
+    <td>Default version
+    <td>Description
+    $forall packages
+        <tr>
+        <td><a href="$it.infoUrl$">$it.displayName$</a></td>
+        <td><a $it.defaultVersion.helpPageHref$>$it.moduleName$</a></td>
+        <td><a href="$it.versionPageUrl$">$it.defaultVersionName$</a></td>
+        <td>$it.description$</td>
