@@ -3,7 +3,7 @@ $# Main entry template for genereating HTML pages
 $#
 $doctype 5
 <html>
-    ^{header}
+    ^{header title}
     <body>
         <div #doc3 .yui-t1>
             <div #.yui-main>

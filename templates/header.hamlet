@@ -1,0 +1,4 @@
+<head>
+    <title>#{title}
+    <link href=@{BaseCss} rel="stylesheet" media="screen, projection" type="text/css"/>
+    <link href=@{PrintCss} rel="stylesheet" media="print" type= "text/css"/>

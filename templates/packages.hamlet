@@ -1,6 +1,6 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base}/#{pageUrl}> #{pagetitle}
+        <a href=@{Base}/#{pageUrl}> #{pageTitle page}
     <table>
         <tr>
             <td>Program
