@@ -5,12 +5,11 @@
 -- 
 -- (c) jonas.juselius@uit.no, 2013
 --
-{-# LANGUAGE CPP, DeriveDataTypeable, OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
-#ifdef CABAL_BUILD
 import Paths_spiderman
-#endif
-
 import Data.Aeson
 import Data.Char
 import Data.List
@@ -20,7 +19,6 @@ import System.FilePath
 import System.Console.CmdArgs
 import MasXml
 import SoftwarePages
-import LmodPackage (emptyPackage)
 import qualified LmodPackage as L
 import qualified Control.Exception as Except
 import qualified System.IO.Error as IO
@@ -29,27 +27,24 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Text.StringTemplate as ST
  
 data Flags = Flags {
       outdir :: FilePath
     , inpfile :: FilePath
-    , templatedir :: FilePath
-    , category :: String
-    , keyword :: String
-    , format :: String
-    , url :: String
-    , site :: String
+    , category :: T.Text
+    , keyword :: T.Text
+    , format :: T.Text
+    , url :: T.Text
+    , site :: T.Text
     , mainpage :: Bool
     } deriving (Data, Typeable, Show, Eq)
 
 main = do
     args <- cmdArgs flags
     ason <- BS.readFile (inpfile args)
-    templates <- initializeTemplates (templatedir args)
     gotoOutdir args
     pkgs <- fmap (filterPackages args) (decodePackages ason)
-    dispatchTemplates args pkgs templates
+    dispatchTemplates args pkgs
     putStrLn $ "*** Processed " ++ show (length pkgs) ++  " packages."
 
 gotoOutdir args = do
@@ -57,44 +52,28 @@ gotoOutdir args = do
     Except.catch (setCurrentDirectory dir) handler
     where dir = nameOutdir (outdir args) (inpfile args)
 
-initializeTemplates templdir = do
-    defTemplDir <- getDataFileName "templates"
-    let templates = if null templdir then defTemplDir else templdir in
-        ST.directoryGroup templates :: IO (ST.STGroup T.Text)
-
-dispatchTemplates :: Flags -> [L.Package] -> ST.STGroup T.Text -> IO ()
-dispatchTemplates args pkgs templ = 
+dispatchTemplates :: Flags -> [L.Package] -> IO ()
+dispatchTemplates args pkgs = 
     case format args of
         "html" -> writeHtml p
         "rst" -> writePkgs htmlToRst p
-        "gitit" -> writePkgs (toGitit . htmlToRst) p
-        "mas" -> writeMasXml (site args) (url args) ("software" ++ ext page) p
+        "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
+        "mas" -> writeMasXml (site args) (url args) "software.xml" p
         _ -> error "Invalid output format!"
     where 
-        page = PageInfo { 
-              title = makeTitle (category args) (keyword args) 
-            , ext = outputFileExt $ format args
-            , mainTemplate = getMainTemplate args templ
-            , pkg = emptyPackage
+        page = Page { 
+              pageTitle = makeTitle (category args) (keyword args) 
+            , pageFile = (\s -> urlify s `T.append` outputFileExt (format args))
+            , pagePackage = L.emptyPackage
             }
         p = formatPackageList page pkgs
-        fname = nameIndexFile args ++ ext page
+        fname = T.unpack . pageFile page $ indexFileName args
         writeHtml = if mainpage args 
             then writeListingPage fname id
             else writeSoftwarePages fname id
         writePkgs = if mainpage args 
             then writeListingPage fname 
             else writeSoftwarePages fname 
-
-getMainTemplate args templs =
-    case format args of
-        "html" -> getTemplate "page" templs
-        _ -> getTemplate "package" templs
-
-getTemplate name templs =
-    case ST.getStringTemplate name templs of
-        Just t -> t
-        Nothing -> error "Invalid template"
 
 outputFileExt fmt =
     case fmt of
@@ -104,11 +83,11 @@ outputFileExt fmt =
         "mas" -> ".xml"
         _ -> error "Invalid output format!"
 
-nameIndexFile args 
-    | null catg && null keyw = "index" 
-    | null catg = keyw 
-    | null keyw = catg 
-    | otherwise = catg ++ "_" ++ keyw 
+indexFileName args 
+    | T.null catg && T.null keyw = "index" 
+    | T.null catg = keyw 
+    | T.null keyw = catg 
+    | otherwise = catg `T.append` "_" `T.append` keyw 
     where
         catg = category args
         keyw = keyword args 
@@ -120,31 +99,29 @@ nameOutdir dir filename
 getFileExt = dropWhile (/='.')
     
 makeTitle a b
-    | null a' = p ++ kw
-    | a' `isPrefixOf` "development" = "Development " ++ p ++ kw
-    | a' `isPrefixOf` "library" = "Libraries" ++ kw
-    | a' `isPrefixOf` "compiler" = "Compilers" ++ kw
-    | a' `isPrefixOf` "application" = "Applications" ++ kw
-    | otherwise = p ++ kw
+    | T.null a' = p `T.append` kw
+    | a' `T.isPrefixOf` "development" = "Development " `T.append` p `T.append` kw
+    | a' `T.isPrefixOf` "library" = "Libraries" `T.append` kw
+    | a' `T.isPrefixOf` "compiler" = "Compilers" `T.append` kw
+    | a' `T.isPrefixOf` "application" = "Applications" `T.append` kw
+    | otherwise = p `T.append` kw
     where 
-        a' = map toLower a
+        a' = T.toLower a
         p = "Packages"
-        kw = if null b then "" else ": " ++ b
+        kw = if T.null b then "" else ": " `T.append` b
 
 filterPackages args = 
     filterCategory (category args) . filterKeyword (keyword args) 
 
 filterCategory x 
-    | null x = id
+    | T.null x = id
     | x == "all" = id
-    | otherwise = filter (\y -> lowerText x `T.isPrefixOf` L.category y) 
+    | otherwise = filter (\y -> T.toLower x `T.isPrefixOf` L.category y) 
 
 filterKeyword x 
-    | null x = id
+    | T.null x = id
     | x == "all" = id
-    | otherwise = filter (any (lowerText x `T.isInfixOf`) . L.keywords)
-
-lowerText = T.toLower . T.pack
+    | otherwise = filter (any (T.toLower x `T.isInfixOf`) . L.keywords)
 
 printKeyword = fmap print $ map L.keywords
 
@@ -170,32 +147,33 @@ skipHelpPage page v
     | otherwise = True   
     where url = T.unpack . packageHelpUrl page $ v
 
-writeSoftwarePages fn formatter pages = do
-    TIO.writeFile fn . formatter $ renderListingTemplate pages
+writeSoftwarePages :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
+writeSoftwarePages fname formatter pages = do
+    TIO.writeFile fname (formatter . renderPackageListingPage $ pages)
     mapM_ (writeVersionPage formatter) pages
     mapM_ (writeHelpPages formatter) pages
 
-writeListingPage fn formatter page = 
-    TIO.writeFile fn . formatter $ renderListingTemplate page
+writeListingPage :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
+writeListingPage fname formatter page = 
+    TIO.writeFile fname (formatter . renderPackageListingPage $ page)
 
 writeVersionPage formatter page = 
     TIO.writeFile (packageVersionFileName page) $ 
-        formatter $ renderVersionTemplate page 
+        formatter $ renderVersionPage page 
 
 writeHelpPages formatter page = 
-    mapM_ (\v -> TIO.writeFile (packageHelpFileName (ext page) v) 
-        (formatter $ renderHelpTemplate page v)) vers
+    mapM_ (\v -> TIO.writeFile fname
+        (formatter $ renderHelpPage page v)) vers
     where 
-        v = HM.elems $ L.versions (pkg page)
-        vers = if ext page == "html" then 
+        v = HM.elems $ L.versions (pagePackage page)
+        fname = T.unpack . pageFile page $ fullName v
+        vers = if pageFile page $ fname `T.isSuffixOf` "html" then 
             filter (skipHelpPage page) v else v
 
-writeMasXml :: String -> String -> String -> [PageInfo] -> IO ()
+writeMasXml :: T.Text -> T.Text -> T.Text -> [Page] -> IO ()
 writeMasXml site baseUrl f pages = 
---     let page = PageInfo site "" "" (ST.StringTemplate "")
---         p = formatPackageList page pkgs in
     writeFile f $ BS.unpack $ renderMasXml site baseUrl p
-    where p = map pkg pages
+    where p = map pagePackage pages
         
 handler :: IO.IOError -> IO ()  
 handler e  
@@ -207,7 +185,6 @@ handler e
 
 flags = Flags {
       outdir = "" &= typDir &= help "Output directory"
-    , templatedir = "" &= typDir &= help "Template directory for HTML pages"
     , inpfile = def &= argPos 0 &= typFile
     , category = "" &= typ "CATEGORY" &= 
         help "Generate pages only for CATEGORY"
@@ -220,18 +197,10 @@ flags = Flags {
     } 
     &= verbosity 
     &= help "Convert Lmod/JSON to HTML pages" 
-    &= summary ("Version " ++ ver ++ ", (c) Jonas Juselius 2013")
+    &= summary ("Version " ++ showVersion version ++ ", (c) Jonas Juselius 2013")
     &= details [
          "Process JSON into a HTML tree."
         ,"Create the appropriate JSON file using the 'runspider.sh' script."
         , ""
         ]
 
-ver = showVersion version
-
-#ifndef CABAL_BUILD
-version = Version [1, 0] []
-getDataFileName x = do 
-    cwd <- getCurrentDirectory 
-    return $ cwd </> "data" </> x
-#endif

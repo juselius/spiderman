@@ -4,63 +4,75 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | Generate HTML from Lmod(ualtor) Packages using HStringTemplates.
 module SoftwarePages (
-      PageInfo(..) 
-    , renderListingTemplate
-    , renderVersionTemplate
-    , renderHelpTemplate
+      Page(..) 
+    , renderPackageListingPage
+    , renderVersionPage
+    , renderHelpPage
     , formatPackageList
     , sortPackages
-    , toUrl
-    , toGitit
+    , addGititHeaders
+    , urlify
     , rstToHtml
     , htmlToRst
     , packageVersionUrl
     , packageHelpUrl
     , packageVersionFileName
-    , packageHelpFileName
     ) where
 
-import LmodPackage 
 import Control.Applicative
 import Control.Monad
-import Control.Arrow
 import Data.List
 import Data.Char
 import Data.Function (on)
 import Text.Regex.Posix
 import Text.Blaze.Html.Renderer.Pretty (renderHtml)
-import Text.Hamlet (hamlet)
+import Text.Hamlet (hamlet, hamletFile, HtmlUrl)
 import qualified Text.Pandoc as P
 import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
 import qualified Data.HashMap.Strict as HM
+import LmodPackage 
+import Paths_spiderman
 
-data PageInfo = PageInfo
-    { title :: String
-    , ext :: String
-    , mainTemplate :: StringTemplate T.Text
-    , pkg :: Package
+data Page = Page
+    { pageTitle :: T.Text
+    , pageFile :: T.Text -> T.Text
+    , pagePackage :: Package
     }
 
-formatPackageList :: PageInfo -> [Package] -> [PageInfo]
-formatPackageList page [] = [page { pkg = emptyPackage }]
-formatPackageList page pkgs = map (\p -> formatPackage page { pkg = p }) pkgs
+data Route = Home
+    | Base
+    | BaseCss
+    | PrintCss
+    | Images
 
-formatPackage :: PageInfo -> PageInfo
-formatPackage page = page { pkg = p
-    { moduleName = trimPackageName . package $ p
+renderUrl :: Route -> [(T.Text, T.Text)] -> T.Text
+renderUrl Home _ = "/"
+renderUrl Base _ = "/software"
+renderUrl BaseCss _ = "/css/custom.css"
+renderUrl PrintCss _ = "/css/print.css"
+renderUrl Images _ = "/img"
+
+formatPackageList :: Page -> [Package] -> [Page]
+formatPackageList stencil [] = [stencil { pagePackage = emptyPackage }]
+formatPackageList stencil pkgs = 
+    map (\p -> formatPackage stencil { pagePackage = p }) pkgs
+
+formatPackage :: Page -> Page
+formatPackage page = page { pagePackage  = p
+    { moduleName = trimPackageName . packageName $ p
 --     , description = T.take 80 . description $ p
     , defaultVersion = formatVersion page defaultVersion
-    , versionPageUrl = packageVersionUrl p `T.append` T.pack (ext page)
+    , versionPageUrl = pageFile page $ packageVersionUrl p 
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
     , versions = HM.map (formatVersion page) $ versions p
     }}
     where 
-        p = pkg page
+        p = pagePackage page
         defaultVersion = getDefaultVersion p 
     
 formatVersion page v = v 
@@ -81,11 +93,10 @@ cleanPath x
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
-toGitit p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
+addGititHeaders p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
 
 -- | Convert a package/version path to a usable url name
-toUrl :: T.Text -> T.Text
-toUrl = T.toLower . T.replace "/" "."  
+urlify = T.toLower . T.replace "/" "." 
 
 rstToHtml =  P.writeHtmlString P.def . P.readRST P.def 
 
@@ -93,42 +104,64 @@ htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
 sortPackages = sortBy (compare `on` T.toLower . displayName)  
 
-runListingTemplate pages = 
-    setAttribute "pagetitle" tit
-    $ setAttribute "packages" p
-    $ templ
+tabs = "This is a tab" :: T.Text
+
+pageTemplate :: T.Text -> HtmlUrl Route -> HtmlUrl Route
+pageTemplate title content = $(hamletFile "templates/page.hamlet")
+-- packagesTemplate = $(hamletFile "templates/packages.hamlet")
+-- helpTemplate = $(hamletFile "templates/help.hamlet")
+-- versionsTemplate = $(hamletFile "templates/versions.hamlet")
+
+logo = $(hamletFile "templates/logo.hamlet")
+footer = $(hamletFile "templates/footer.hamlet")
+
+header :: T.Text -> HtmlUrl Route
+header title = $(hamletFile "templates/header.hamlet")
+
+sitenav = $(hamletFile "templates/sitenav.hamlet")
+
+renderPackageListingPage pages = 
+    T.pack . renderHtml $ pageTemplate "foop" logo $ renderUrl
     where 
-        templ = mainTemplate (head pages)
-        tit = title (head pages)
-        p = map pkg pages
+        title = pageTitle (head pages)
+        packages = map pagePackage pages
     
-runVersionTemplate page = 
-    setAttribute "pagetitle" ("Package " `T.append` package p) 
-    $ setAttribute "versions" (versions p) 
-    $ setAttribute "keywords" (keywords p)
-    $ setAttribute "package" (pkg page)  
-    $ setAttribute "ext" (ext page)  
-    $ templ
+renderVersionPage page = 
+    T.pack "version"
+--     renderHtml $ versionsTemplate renderUrl
     where 
-        templ = mainTemplate page
-        p = pkg page
+        package = pagePackage page
+        title = ("Package " `T.append` packageName package) 
+        ver = (versions package) 
+        keys = (keywords package)
+--         ext = (pageExt page)  
+--     setAttribute "pagetitle" ("Package " `T.append` package p) 
+--     $ setAttribute "versions" (versions p) 
+--     $ setAttribute "keywords" (keywords p)
+--     $ setAttribute "package" (pkg page)  
+--     $ setAttribute "ext" (ext page)  
+--     $ templ
+--     where 
+--         templ = mainTemplate page
+--         p = pkg page
 
-runHelpTemplate page v = 
-    setAttribute "pagetitle" ("Module " `T.append` fullName v) 
-    $ setAttribute "helptext" (helpText v) 
-    $ setAttribute "package" (pkg page)  
-    $ setAttribute "ext" (ext page)  
-    $ templ
-    where 
-        templ = mainTemplate page
+renderHelpPage page v = 
+    "help"
+--     renderHtml $ helpTemplate renderUrl
+    where
+        pagetitle = ("Module " `T.append` fullName v) 
+        helptext = (helpText v) 
+        package = (pagePackage page)  
+--         ext = (pageExt page)  
+--     setAttribute "pagetitle" ("Module " `T.append` fullName v) 
+--     $ setAttribute "helptext" (helpText v) 
+--     $ setAttribute "package" (pkg page)  
+--     $ setAttribute "ext" (ext page)  
+--     $ templ
+--     where 
+--         templ = mainTemplate page
 
-renderListingTemplate pages = render $ runListingTemplate pages
-
-renderVersionTemplate page = render $ runVersionTemplate page
-
-renderHelpTemplate page v = render $ runHelpTemplate page v
-
-packageVersionUrl p = toUrl (package p)
+packageVersionUrl p = urlify (packageName p)
 
 packageHelpUrl page v = 
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
@@ -136,7 +169,7 @@ packageHelpUrl page v =
         [s, u] -> if s == "Site" then T.pack u else ""  
         [s, a1, u, a2] -> if s == "Site" then T.pack u else ""  
         -- return url to help page to be generated
-        [] -> toUrl (fullName v) `T.append` T.pack (ext page)
+        [] -> pageFile page $ fullName v
     where 
         t = T.unpack . helpText $ v
         pat = "(Site|Off-site) help:" ++ 
@@ -145,25 +178,9 @@ packageHelpUrl page v =
 -- packageHelpUrl v = 
 --     let (a, b, c , d) = helpText v =~ "See  *(http://[^ \t]*)" :: 
 --         (String,String,String,[String]) in
---     toUrl (fullName v)
+--     urlify (fullName v)
 
 packageVersionFileName page = 
-    T.unpack (toUrl (package p)) ++ ext page
-    where p = pkg page
-
-packageHelpFileName ext v = T.unpack (toUrl (fullName v)) ++ ext
-
-htmlReplaceMap :: [(T.Text, T.Text)]
-htmlReplaceMap =  
-    map packBoth  [   
-          ("<", "&lt;")
-        , (">", "&gt;")
-        , ("\"", "&quot;")
-        , ("\'", "&#39;")
-        , ("&", "&amp;") ]
-    where packBoth = T.pack Control.Arrow.*** T.pack
- 
-escapeHtmlString :: T.Text -> T.Text
-escapeHtmlString =
-  foldl1 (.) $ map (uncurry T.replace) htmlReplaceMap
+    T.unpack . pageFile page $ packageName p
+    where p = pagePackage page
 
