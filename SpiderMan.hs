@@ -31,11 +31,11 @@ import qualified Data.Text.IO as TIO
 data Flags = Flags {
       outdir :: FilePath
     , inpfile :: FilePath
-    , category :: T.Text
-    , keyword :: T.Text
-    , format :: T.Text
-    , url :: T.Text
-    , site :: T.Text
+    , category :: String
+    , keyword :: String
+    , format :: String
+    , url :: String
+    , site :: String
     , mainpage :: Bool
     } deriving (Data, Typeable, Show, Eq)
 
@@ -58,12 +58,15 @@ dispatchTemplates args pkgs =
         "html" -> writeHtml p
         "rst" -> writePkgs htmlToRst p
         "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
-        "mas" -> writeMasXml (site args) (url args) "software.xml" p
+        "mas" -> writeMasXml "software.xml" 
+            (T.pack $ site args) (T.pack $ url args) p
         _ -> error "Invalid output format!"
     where 
         page = Page { 
-              pageTitle = makeTitle (category args) (keyword args) 
-            , pageFile = (\s -> urlify s `T.append` outputFileExt (format args))
+              pageTitle = makeTitle (T.pack $ category args) 
+                (T.pack $ keyword args) 
+            , pageFile = \s -> urlify s `T.append` outputFileExt 
+                (T.pack $ format args)
             , pagePackage = L.emptyPackage
             }
         p = formatPackageList page pkgs
@@ -84,10 +87,10 @@ outputFileExt fmt =
         _ -> error "Invalid output format!"
 
 indexFileName args 
-    | T.null catg && T.null keyw = "index" 
-    | T.null catg = keyw 
-    | T.null keyw = catg 
-    | otherwise = catg `T.append` "_" `T.append` keyw 
+    | null catg && null keyw = "index" 
+    | null catg = T.pack keyw 
+    | null keyw = T.pack catg 
+    | otherwise = T.pack $ catg ++ "_" ++ keyw 
     where
         catg = category args
         keyw = keyword args 
@@ -110,8 +113,8 @@ makeTitle a b
         p = "Packages"
         kw = if T.null b then "" else ": " `T.append` b
 
-filterPackages args = 
-    filterCategory (category args) . filterKeyword (keyword args) 
+filterPackages args = filterCategory (T.pack $ category args) . 
+    filterKeyword (T.pack $ keyword args) 
 
 filterCategory x 
     | T.null x = id
@@ -129,7 +132,7 @@ decodePackages :: BS.ByteString -> IO [L.Package]
 decodePackages ason =
     case decode ason of
         Just x -> let failed = L.failures x in
-            if length failed > 0
+            if not (null failed)
             then do putStrLn $ warnFailed failed
                     return $ goodPackages x
             else return $ goodPackages x
@@ -162,17 +165,16 @@ writeVersionPage formatter page =
         formatter $ renderVersionPage page 
 
 writeHelpPages formatter page = 
-    mapM_ (\v -> TIO.writeFile fname
+    mapM_ (\v -> TIO.writeFile (T.unpack . pageFile page $ L.fullName v)
         (formatter $ renderHelpPage page v)) vers
     where 
         v = HM.elems $ L.versions (pagePackage page)
-        fname = T.unpack . pageFile page $ fullName v
-        vers = if pageFile page $ fname `T.isSuffixOf` "html" then 
+        vers = if pageFile page "" `T.isSuffixOf` "html" then 
             filter (skipHelpPage page) v else v
 
-writeMasXml :: T.Text -> T.Text -> T.Text -> [Page] -> IO ()
-writeMasXml site baseUrl f pages = 
-    writeFile f $ BS.unpack $ renderMasXml site baseUrl p
+writeMasXml :: FilePath -> T.Text -> T.Text -> [Page] -> IO ()
+writeMasXml fname site baseUrl pages = 
+    writeFile fname $ BS.unpack $ renderMasXml site baseUrl p
     where p = map pagePackage pages
         
 handler :: IO.IOError -> IO ()  

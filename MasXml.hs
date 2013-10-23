@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 renderMasXml site baseUrl p = 
-    xrender $ genMasXml (T.pack site) (T.pack baseUrl) p
+    xrender $ genMasXml site baseUrl p
 
 genMasXml :: T.Text -> T.Text -> [Package] -> Xml Doc
 genMasXml site baseUrl p = doc defaultDocInfo $ 
