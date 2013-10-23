@@ -65,12 +65,12 @@ dispatchTemplates args pkgs =
         page = Page { 
               pageTitle = makeTitle (T.pack $ category args) 
                 (T.pack $ keyword args) 
-            , pageFile = \s -> urlify s `T.append` outputFileExt 
+            , pageName = \s -> urlify s `T.append` outputFileExt 
                 (T.pack $ format args)
             , pagePackage = L.emptyPackage
             }
         p = formatPackageList page pkgs
-        fname = T.unpack . pageFile page $ indexFileName args
+        fname = T.unpack . pageName page $ indexFileName args
         writeHtml = if mainpage args 
             then writeListingPage fname id
             else writeSoftwarePages fname id
@@ -165,11 +165,11 @@ writeVersionPage formatter page =
         formatter $ renderVersionPage page 
 
 writeHelpPages formatter page = 
-    mapM_ (\v -> TIO.writeFile (T.unpack . pageFile page $ L.fullName v)
+    mapM_ (\v -> TIO.writeFile (T.unpack . pageName page $ L.fullName v)
         (formatter $ renderHelpPage page v)) vers
     where 
         v = HM.elems $ L.versions (pagePackage page)
-        vers = if pageFile page "" `T.isSuffixOf` "html" then 
+        vers = if pageName page "" `T.isSuffixOf` "html" then 
             filter (skipHelpPage page) v else v
 
 writeMasXml :: FilePath -> T.Text -> T.Text -> [Page] -> IO ()
