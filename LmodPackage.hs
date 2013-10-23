@@ -24,7 +24,7 @@ import qualified Data.Vector as V
 
 -- | Lmod package representation
 data Package = Package 
-    { package :: T.Text
+    { packageName :: T.Text
     , displayName :: T.Text
     , defaultVersionName :: T.Text
     , description :: T.Text
