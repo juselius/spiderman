@@ -1,12 +1,9 @@
+$#
+$# Main entry template for genereating HTML pages
+$#
 $doctype 5
 <html>
-    <head>
-        <title>#{pagetitle}</title>
-        $if printable
-            <link href=@{print_css} rel="stylesheet" media="all" type="text/css"/>
-        $else
-            <link href=@{custom_css} rel="stylesheet" media="screen, projection" type="text/css"/>
-            <link href=@{print_css} rel="stylesheet" media="print" type= "text/css" />
+    ^{header}
     <body>
         <div #doc3 .yui-t1>
             <div #.yui-main>

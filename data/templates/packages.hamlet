@@ -1,12 +1,18 @@
-<table>
-    <tr>
-    <td>Program
-    <td>Module
-    <td>Default version
-    <td>Description
-    $forall packages
+<div #content>
+    <h1 .pageTitle>
+        <a href=@{Base}/#{pageUrl}> #{pagetitle}
+    <table>
         <tr>
-        <td><a href="$it.infoUrl$">$it.displayName$</a></td>
-        <td><a $it.defaultVersion.helpPageHref$>$it.moduleName$</a></td>
-        <td><a href="$it.versionPageUrl$">$it.defaultVersionName$</a></td>
-        <td>$it.description$</td>
+            <td>Program
+            <td>Module
+            <td>Default version
+            <td>Description
+        $forall it <- packages
+            <tr>
+                <td>
+                    <a href=@{Base}/#{it infoUrl}>#{it displayName}
+                <td>
+                    <a @{Base}/#{(it defaultVersion) helpPageHref}>#{it moduleName}
+                <td>
+                    <a href=@{Base}/#{it versionPageUrl}>#{it defaultVersionName}
+                <td>#{it.description}

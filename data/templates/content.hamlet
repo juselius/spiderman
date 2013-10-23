@@ -1,5 +1,0 @@
-<div #content>
-    <h1 .pageTitle>
-        <a href=@{pageUrl}> #{pagetitle}
-        ^{package}
-        #{content}

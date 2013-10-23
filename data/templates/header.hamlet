@@ -1,0 +1,7 @@
+<head>
+    <title>#{pagetitle}
+    $if printable
+        <link href=@{Print_css} rel="stylesheet" media="all" type="text/css"/>
+    $else
+        <link href=@{Custom_css} rel="stylesheet" media="screen, projection" type="text/css"/>
+        <link href=@{Print_css} rel="stylesheet" media="print" type= "text/css"/>

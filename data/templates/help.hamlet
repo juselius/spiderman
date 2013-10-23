@@ -1,0 +1,8 @@
+<div #content>
+    <h1 .pageTitle>
+        <a href=@{Base}/#{pageUrl}>#{pagetitle}
+    <h4>List of 
+        <a href=@{Base}/#{versionPageUrl}>available versions
+    <p>
+        #{helptext}
+

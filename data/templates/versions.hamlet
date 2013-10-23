@@ -1,17 +1,17 @@
-<table>
-<tr>
-<td>Keywords:</td>
-<td>$keywords; separator=', '$</td>
-</tr>
-</table>
-
-<table>
-<tr><td>Version</td> <td>Module</td></tr>
-$versions:{
-<tr>
-    <td>$it.version$</td>
-    <td><a $it.helpPageHref$>$it.fullName$</a></td>
-</tr>
-}$
-</table>
+<div #content>
+    <h1 .pageTitle>
+        <a href=@{Base}/#{pageUrl}>#{pagetitle}
+    <table>
+        <tr>
+        <td>Keywords:
+        <td>#{keywords}
+    <table>
+    <tr>
+        <td>Version
+        <td>Module
+        $forall it <- versions
+            <tr>
+                <td>#{it.version}
+                <td>
+                    <a @{Base}/#{it helpPageHref}>#{it fullName}
 
