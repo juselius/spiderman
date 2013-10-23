@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                spiderman
-version:             1.0.0.0
+version:             1.1.0.0
 synopsis:            Lmod to software page
 -- description:         
 homepage:            https://github.com/bakerjonas/spiderman 
@@ -17,8 +17,7 @@ cabal-version:       >=1.8
 
 extra-source-files: README.rst
 data-dir:           data
-data-files:         templates/*.st, 
-                    img/*.png, img/icons/*.png
+data-files:         img/*.png, img/icons/*.png
                     css/*.css
 
 library 
@@ -26,6 +25,7 @@ library
     LmodPackage,
     SoftwarePages
     MasXml
+  other-modules: Paths_spiderman
   build-depends:     
     base 
     , filepath
@@ -40,11 +40,10 @@ library
     , xmlgen
     , hamlet
     , regex-posix
-  other-modules: Paths_spiderman
 
 executable spiderman
   main-is:            SpiderMan.hs 
-  -- other-modules:       
+  other-modules: Paths_spiderman
   build-depends:       
     base 
     , aeson 
@@ -61,6 +60,5 @@ executable spiderman
     , xmlgen
     , hamlet
     , regex-posix
-  other-modules: Paths_spiderman
   cpp-options: -DCABAL_BUILD
 
