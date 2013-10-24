@@ -13,10 +13,11 @@ module SoftwarePages (
     , renderVersionPage
     , renderHelpPage
     , formatPackage
-    , formatPackageList
+    , formatPage
     , sortPackageList
     , rstToHtml
     , htmlToRst
+    , urlify
     ) where
 
 import Control.Applicative
@@ -57,31 +58,38 @@ data Route = Home
     | Base T.Text
     | Images T.Text
 
+type FileNameFormatter = T.Text -> T.Text 
+
+-- Routes should be configurable from a file
 renderUrl :: Route -> [(T.Text, T.Text)] -> T.Text
 renderUrl Home _ = "/"
 renderUrl BaseCss _ = "/css/custom.css"
 renderUrl PrintCss _ = "/css/print.css"
 renderUrl (Images x) _ = "/img/" `T.append` x 
-renderUrl (Base x) _  = x
---     | "http" `T.isPrefixOf` x = x
---     | otherwise = "software/" `T.append` x 
+renderUrl (Base x) _ 
+    | "http" `T.isPrefixOf` x = x
+    | otherwise = x 
 
-formatPackageList :: [Package] -> [Package]
-formatPackageList ps = map formatPackage ps
+formatPage :: FileNameFormatter-> Page -> Page
+formatPage f page = case page of
+    IndexPage _ _ ps -> page { packageList = map (formatPackage f) ps }
+    VersionPage _ _ ps -> page { package = formatPackage f ps }
+    HelpPage _ _ ps -> page { versionList = map (formatVersion f) ps }
 
-formatPackage :: Package -> Package
-formatPackage p = p { 
+formatPackage :: FileNameFormatter -> Package -> Package
+formatPackage f p = p { 
       moduleName = trimPackageName . packageName $ p
-    , defaultVersion = formatVersion $ getDefaultVersion p 
-    , packageIndexName = urlify $ packageName p 
+    , defaultVersion = formatVersion f $ getDefaultVersion p 
+    , packageIndexName = f $ packageName p 
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
-    , versions = HM.map formatVersion $ versions p
+    , versions = HM.map (formatVersion f) $ versions p
     }
     
-formatVersion v = v { 
+formatVersion :: FileNameFormatter -> Version -> Version
+formatVersion f v = v { 
       helpText = T.pack . rstToHtml . T.unpack . helpText $ v
-    , helpPageHref = helpPageName v 
+    , helpPageHref = f $ helpPageName v 
     } 
         
 trimPackageName pkg =

@@ -152,10 +152,10 @@ skipHelpPage v
 
 makeHtmlPages :: Page -> [(FilePath, T.Text)]
 makeHtmlPages page =  case page of 
-    IndexPage _ _ _ -> [(fname, renderIndexPage page { packageList = p } )]
+    IndexPage _ _ _ -> [(fname, renderIndexPage p)]
     _ -> undefined
     where
-        p = formatPackageList $ packageList page
+        p = formatPage (\f -> urlify f `T.append` ".html") page
         fname = T.unpack $ pageName page
 
 writePages :: [(FilePath, T.Text)] -> IO ()
