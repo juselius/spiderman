@@ -102,9 +102,9 @@ sortpackageList = sortBy (compare `on` T.toLower . displayName)
 
 tabs = "This is a tab" :: T.Text
 
-pageTemplate :: T.Text -> HtmlUrl Route -> HtmlUrl Route
+pageTemplate :: Page -> HtmlUrl Route -> HtmlUrl Route
 pageTemplate title content = $(hamletFile "templates/page.hamlet")
--- packageListTemplate = $(hamletFile "templates/packageList.hamlet")
+packageListTemplate page = $(hamletFile "templates/packages.hamlet")
 -- helpTemplate = $(hamletFile "templates/help.hamlet")
 -- versionsTemplate = $(hamletFile "templates/versions.hamlet")
 
@@ -117,42 +117,24 @@ header title = $(hamletFile "templates/header.hamlet")
 sitenav = $(hamletFile "templates/sitenav.hamlet")
 
 renderPackageListingPage page = 
-    T.pack . renderHtml $ pageTemplate page renderUrl
+    T.pack . renderHtml $ pageTemplate page packageListTemplate renderUrl
     
 renderVersionPage page = 
     T.pack "version"
 --     renderHtml $ versionsTemplate renderUrl
-    where 
-        package = packageList page
-        title = "Package " `T.append` packageName package
-        ver = versions package 
-        keys = keywords package
---         ext = (pageExt page)  
---     setAttribute "pagetitle" ("Package " `T.append` package p) 
---     $ setAttribute "versions" (versions p) 
---     $ setAttribute "keywords" (keywords p)
---     $ setAttribute "package" (pkg page)  
---     $ setAttribute "ext" (ext page)  
---     $ templ
 --     where 
---         templ = mainTemplate page
---         p = pkg page
+--         package = packageList page
+--         title = "Package " `T.append` packageName package
+--         ver = versions package 
+--         keys = keywords package
 
 renderHelpPage page v = 
     "help"
 --     renderHtml $ helpTemplate renderUrl
-    where
-        pagetitle = "Module " `T.append` fullName v
-        helptext = helpText v
-        package = packageList page
---         ext = (pageExt page)  
---     setAttribute "pagetitle" ("Module " `T.append` fullName v) 
---     $ setAttribute "helptext" (helpText v) 
---     $ setAttribute "package" (pkg page)  
---     $ setAttribute "ext" (ext page)  
---     $ templ
---     where 
---         templ = mainTemplate page
+--     where
+--         pagetitle = "Module " `T.append` fullName v
+--         helptext = helpText v
+--         package = packageList page
 
 packageVersionUrl p = urlify (packageName p)
 
@@ -170,5 +152,5 @@ packageHelpUrl page v =
 
 packageVersionFileName page = 
     T.unpack . pageName page $ packageName p
-    where p = packageList page
+    where p = head $ packageList page
 

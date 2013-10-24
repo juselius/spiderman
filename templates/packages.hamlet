@@ -1,13 +1,13 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base}/#{pageUrl}> #{pageTitle page}
+        <a href=@{Base}/#{pageName "foo"}> #{pageTitle page}
     <table>
         <tr>
             <td>Program
             <td>Module
             <td>Default version
             <td>Description
-        $forall it <- packages
+        $forall it <- packageList page
             <tr>
                 <td>
                     <a href=@{Base}/#{it infoUrl}>#{it displayName}
@@ -15,4 +15,4 @@
                     <a @{Base}/#{(it defaultVersion) helpPageHref}>#{it moduleName}
                 <td>
                     <a href=@{Base}/#{it versionPageUrl}>#{it defaultVersionName}
-                <td>#{it.description}
+                <td>#{it description}
