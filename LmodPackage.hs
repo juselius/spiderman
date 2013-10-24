@@ -32,7 +32,7 @@ data Package = Package
     , license :: T.Text
     , category  :: T.Text
     , moduleName :: T.Text
-    , versionPageUrl :: T.Text
+    , packageIndexName :: T.Text
     , keywords :: [T.Text]
     , versions :: HM.HashMap T.Text Version
     , defaultVersion :: Version
