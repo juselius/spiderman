@@ -12,7 +12,6 @@ module MasXml (
     ) where
 
 import LmodPackage
-import SoftwarePages (packageVersionUrl)
 import Data.Monoid
 import Text.XML.Generator 
 import qualified Data.Text as T
@@ -32,4 +31,4 @@ genMasPackageInfo baseUrl p = xelem "sw_entry" $
     xattr "progName" (displayName p)  <> 
     xattr "version"  (defaultVersionName p) <> 
     xattr "license" (license p) <> 
-    xattr "infoURL" (baseUrl `T.append` packageVersionUrl p) 
+    xattr "infoURL" (baseUrl `T.append` packageIndexName p `T.append` ".html") 
