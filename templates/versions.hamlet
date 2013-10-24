@@ -1,6 +1,6 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base}/#{pageUrl}>#{pagetitle}
+        <a href=@{Base pageUrl}>#{pagetitle}
     <table>
         <tr>
         <td>Keywords:
@@ -11,7 +11,7 @@
         <td>Module
         $forall it <- versions
             <tr>
-                <td>#{it.version}
+                <td>#{version it}
                 <td>
-                    <a @{Base}/#{it helpPageHref}>#{it fullName}
+                    <a @{Base helpPageHref it}>#{fullName it}
 

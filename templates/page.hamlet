@@ -3,13 +3,13 @@ $# Main entry template for genereating HTML pages
 $#
 $doctype 5
 <html>
-    ^{header title}
+    ^{header $ pageName page}
     <body>
         <div #doc3 .yui-t1>
             <div #.yui-main>
                 <div #maincol .yui-b>
                     #{tabs}
-                    ^{content}
+                    #{content}
                     ^{footer}
             <div #sidebar .yui-b first>
                 ^{logo}

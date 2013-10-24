@@ -7,20 +7,20 @@
                 <li>Categories
                     <ul>
                         <li>
-                            <a href=@{Base}/>All
+                            <a href=@{Base ""}/>All
                         <li>
-                            <a href=@{Base}/application.html>Applications
+                            <a href=@{Base "application.html"}>Applications
                         <li>
-                            <a href=@{Base}/development.html>Development
+                            <a href=@{Base "development.html"}>Development
                         <li>
-                            <a href=@{Base}/library.html>Libraries
+                            <a href=@{Base "library.html"}>Libraries
                 <li>Topics
                     <ul>
                         <li>
-                            <a href=@{Base}/chemistry.html>Chemsiry
+                            <a href=@{Base "chemistry.html"}>Chemsiry
                         <li>
-                            <a href=@{Base}/physics.html>Physics
+                            <a href=@{Base "physics.html"}>Physics
                         <li>
-                            <a href=@{Base}/math.html>Mathematics
+                            <a href=@{Base "math.html"}>Mathematics
                         <li>
-                            <a href=@{Base}/earth.html>Earth sciences
+                            <a href=@{Base "earth.html"}>Earth sciences
