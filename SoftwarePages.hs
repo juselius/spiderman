@@ -9,18 +9,14 @@
 -- | Generate HTML from Lmod(ualtor) packageList using HStringTemplates.
 module SoftwarePages (
       Page(..) 
-    , renderPackageListingPage
+    , renderIndexPage
     , renderVersionPage
     , renderHelpPage
+    , formatPackage
     , formatPackageList
-    , sortpackageList
-    , addGititHeaders
-    , urlify
+    , sortPackageList
     , rstToHtml
     , htmlToRst
-    , packageVersionUrl
-    , packageHelpUrl
-    , packageVersionFileName
     ) where
 
 import Control.Applicative
@@ -29,6 +25,7 @@ import Data.List
 import Data.Char
 import Data.Function (on)
 import Text.Regex.Posix
+import Text.Blaze.Html (Html, toHtml, preEscapedToHtml)
 import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 import Text.Hamlet (hamlet, hamletFile, HtmlUrl)
 import qualified Text.Pandoc as P
@@ -37,49 +34,56 @@ import qualified Data.HashMap.Strict as HM
 import LmodPackage 
 import Paths_spiderman
 
-data Page = Page
-    { pageTitle :: T.Text
-    , pageName :: T.Text -> T.Text
-    , packageList :: [Package]
-    }
+data Page = 
+      IndexPage { 
+          pageTitle :: T.Text
+        , pageName :: T.Text
+        , packageList :: [Package]
+        }
+    | VersionPage { 
+          pageTitle :: T.Text
+        , pageName :: T.Text
+        , package :: Package
+        }
+    | HelpPage {
+          pageTitle :: T.Text
+        , pageName :: T.Text
+        , versionList :: [Version]
+        }
 
 data Route = Home
-    | Base
     | BaseCss
     | PrintCss
-    | Images
+    | Base T.Text
+    | Images T.Text
 
 renderUrl :: Route -> [(T.Text, T.Text)] -> T.Text
 renderUrl Home _ = "/"
-renderUrl Base _ = "/software"
 renderUrl BaseCss _ = "/css/custom.css"
 renderUrl PrintCss _ = "/css/print.css"
-renderUrl Images _ = "/img"
+renderUrl (Images x) _ = "/img/" `T.append` x 
+renderUrl (Base x) _  = x
+--     | "http" `T.isPrefixOf` x = x
+--     | otherwise = "software/" `T.append` x 
 
--- formatPackageList :: Page -> [Package] -> [Page]
--- formatPackageList stencil [] = [stencil { packageList = [] }]
--- formatPackageList stencil pkgs = 
---     map (\p -> formatPackage stencil { packageList = p }) pkgs
+formatPackageList :: [Package] -> [Package]
+formatPackageList ps = map formatPackage ps
 
-formatpackageList :: Page -> Page
-formatpackageList page = page { packageList = map (\p -> p
-    { moduleName = trimPackageName . packageName $ p
-    , defaultVersion = formatVersion page $ getDefaultVersion p 
-    , versionPageUrl = pageName page $ packageVersionUrl p 
+formatPackage :: Package -> Package
+formatPackage p = p { 
+      moduleName = trimPackageName . packageName $ p
+    , defaultVersion = formatVersion $ getDefaultVersion p 
+    , packageIndexName = urlify $ packageName p 
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
-    , versions = HM.map (formatVersion page) $ versions p
-    }) (packageList page)}
+    , versions = HM.map formatVersion $ versions p
+    }
     
-formatVersion page v = v 
-    { helpText = T.pack . rstToHtml . T.unpack . helpText $ v
-    , helpPageHref = if url == "" 
-        then ""
-        else "href=\"" `T.append` url `T.append` "\""
+formatVersion v = v { 
+      helpText = T.pack . rstToHtml . T.unpack . helpText $ v
+    , helpPageHref = helpPageName v 
     } 
-    where 
-        url = packageHelpUrl page v 
-
+        
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
         if p == T.empty then "" else T.reverse p
@@ -98,13 +102,15 @@ rstToHtml =  P.writeHtmlString P.def . P.readRST P.def
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
-sortpackageList = sortBy (compare `on` T.toLower . displayName)  
+sortPackageList = sortBy (compare `on` T.toLower . displayName)  
 
 tabs = "This is a tab" :: T.Text
 
-pageTemplate :: Page -> HtmlUrl Route -> HtmlUrl Route
-pageTemplate title content = $(hamletFile "templates/page.hamlet")
-packageListTemplate page = $(hamletFile "templates/packages.hamlet")
+pageTemplate :: Page -> Html -> HtmlUrl Route
+pageTemplate page content = $(hamletFile "templates/page.hamlet")
+
+packageIndexTemplate :: (T.Text -> T.Text) -> Page -> HtmlUrl Route
+packageIndexTemplate fileT page = $(hamletFile "templates/packages.hamlet")
 -- helpTemplate = $(hamletFile "templates/help.hamlet")
 -- versionsTemplate = $(hamletFile "templates/versions.hamlet")
 
@@ -116,41 +122,27 @@ header title = $(hamletFile "templates/header.hamlet")
 
 sitenav = $(hamletFile "templates/sitenav.hamlet")
 
-renderPackageListingPage page = 
-    T.pack . renderHtml $ pageTemplate page packageListTemplate renderUrl
+renderIndexPage page = 
+    T.pack . renderHtml $ pageTemplate page indexP renderUrl
+    where 
+        indexP = packageIndexTemplate 
+            (\f -> f `T.append` ".html") page renderUrl
     
 renderVersionPage page = 
     T.pack "version"
---     renderHtml $ versionsTemplate renderUrl
---     where 
---         package = packageList page
---         title = "Package " `T.append` packageName package
---         ver = versions package 
---         keys = keywords package
 
 renderHelpPage page v = 
     "help"
---     renderHtml $ helpTemplate renderUrl
---     where
---         pagetitle = "Module " `T.append` fullName v
---         helptext = helpText v
---         package = packageList page
 
-packageVersionUrl p = urlify (packageName p)
-
-packageHelpUrl page v = 
+helpPageName v = 
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
     case g of
         [s, u] -> if s == "Site" then T.pack u else ""  
         [s, a1, u, a2] -> if s == "Site" then T.pack u else ""  
         -- return url to help page to be generated
-        [] -> pageName page $ fullName v
+        [] -> urlify $ fullName v
     where 
         t = T.unpack . helpText $ v
         pat = "(Site|Off-site) help:" ++ 
             "*(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
-
-packageVersionFileName page = 
-    T.unpack . pageName page $ packageName p
-    where p = head $ packageList page
 

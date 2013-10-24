@@ -55,31 +55,30 @@ gotoOutdir args = do
 dispatchTemplates :: Flags -> [L.Package] -> IO ()
 dispatchTemplates args pkgs = 
     case format args of
-        "html" -> writeHtml p
-        "rst" -> writePkgs htmlToRst p
-        "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
-        "mas" -> writeMasXml "software.xml" 
-            (T.pack $ site args) (T.pack $ url args) p
+--         "html" -> writeHtml p
+        "html" -> writePages $ makeHtmlPages page
+--         "rst" -> writePkgs htmlToRst p
+--         "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
+--         "mas" -> writeMasXml (T.pack $ site args) (T.pack $ url args) page
         _ -> error "Invalid output format!"
     where 
-        page = Page { 
+        page = IndexPage { 
               pageTitle = makeTitle (T.pack $ category args) 
                 (T.pack $ keyword args) 
-            , pageName = \s -> urlify s `T.append` outputFileExt 
-                (T.pack $ format args)
-            , pagePackage = L.emptyPackage
+            , pageName = indexFileName args `T.append` outputFileExt args
+            , packageList = pkgs
             }
-        p = formatPackageList page pkgs
-        fname = T.unpack . pageName page $ indexFileName args
-        writeHtml = if mainpage args 
-            then writeListingPage fname id
-            else writeSoftwarePages fname id
-        writePkgs = if mainpage args 
-            then writeListingPage fname 
-            else writeSoftwarePages fname 
+--         p = formatPackageList page pkgs
+--         fname = T.unpack . pageName page $ indexFileName args
+--         writeHtml = if mainpage args 
+--             then writeListingPage fname id
+--             else writeSoftwarePages fname id
+--         writePkgs = if mainpage args 
+--             then writeListingPage fname 
+--             else writeSoftwarePages fname 
 
-outputFileExt fmt =
-    case fmt of
+outputFileExt args =
+    case format args of
         "html" -> ".html"
         "rst" ->  ".rst"
         "gitit" -> ".page"
@@ -99,7 +98,7 @@ nameOutdir dir filename
     | null dir = takeBaseName filename 
     | otherwise = dir
 
-getFileExt = dropWhile (/='.')
+getFileExt = dropWhile (/= '.')
     
 makeTitle a b
     | T.null a' = p `T.append` kw
@@ -138,44 +137,59 @@ decodePackages ason =
             else return $ goodPackages x
         Nothing -> error "Parsing failed."
 
-goodPackages = sortPackages . L.packages
+goodPackages = sortPackageList . L.packages
 
 warnFailed flist = init $ foldl (\s (n, w) -> s
     ++ "Record " ++ show n ++ ": "
     ++ w
     ++ "\n") "" flist
 
-skipHelpPage page v
-    | null url || "http" `isPrefixOf` url = False
+skipHelpPage v
+    | T.null href || "http" `T.isPrefixOf` href = False
     | otherwise = True   
-    where url = T.unpack . packageHelpUrl page $ v
-
-writeSoftwarePages :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
-writeSoftwarePages fname formatter pages = do
-    TIO.writeFile fname (formatter . renderPackageListingPage $ pages)
-    mapM_ (writeVersionPage formatter) pages
-    mapM_ (writeHelpPages formatter) pages
-
-writeListingPage :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
-writeListingPage fname formatter page = 
-    TIO.writeFile fname (formatter . renderPackageListingPage $ page)
-
-writeVersionPage formatter page = 
-    TIO.writeFile (packageVersionFileName page) $ 
-        formatter $ renderVersionPage page 
-
-writeHelpPages formatter page = 
-    mapM_ (\v -> TIO.writeFile (T.unpack . pageName page $ L.fullName v)
-        (formatter $ renderHelpPage page v)) vers
     where 
-        v = HM.elems $ L.versions (pagePackage page)
-        vers = if pageName page "" `T.isSuffixOf` "html" then 
-            filter (skipHelpPage page) v else v
+        href = L.helpPageHref v
 
-writeMasXml :: FilePath -> T.Text -> T.Text -> [Page] -> IO ()
-writeMasXml fname site baseUrl pages = 
+makeHtmlPages :: Page -> [(FilePath, T.Text)]
+makeHtmlPages page =  case page of 
+    IndexPage _ _ _ -> [(fname, renderIndexPage page { packageList = p } )]
+    _ -> undefined
+    where
+        p = formatPackageList $ packageList page
+        fname = T.unpack $ pageName page
+
+writePages :: [(FilePath, T.Text)] -> IO ()
+writePages ps = mapM_ (\(fname, content) -> TIO.writeFile fname content) ps
+
+-- writeSoftwarePages :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
+-- writeSoftwarePages fname formatter pages = do
+--     TIO.writeFile fname (formatter . renderPackageListingPage $ pages)
+--     mapM_ (writeVersionPage formatter) pages
+--     mapM_ (writeHelpPages formatter) pages
+
+-- writeListingPage :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
+-- writeListingPage fname formatter page = 
+--     TIO.writeFile fname (formatter . renderPackageListingPage $ page)
+
+-- writeVersionPage formatter page = 
+--     TIO.writeFile (packageVersionFileName page) $ 
+--         formatter $ renderVersionPage page 
+
+-- writeHelpPages formatter page = 
+--     mapM_ (\v -> TIO.writeFile (T.unpack . pageName page $ L.fullName v)
+--         (formatter $ renderHelpPage page v)) vers
+--     where 
+--         v = HM.elems $ L.versions (pagePackage page)
+--         vers = if pageName page "" `T.isSuffixOf` "html" 
+--             then filter skipHelpPage v 
+--             else v
+
+writeMasXml :: T.Text -> T.Text -> Page -> IO ()
+writeMasXml site baseUrl page = 
     writeFile fname $ BS.unpack $ renderMasXml site baseUrl p
-    where p = map pagePackage pages
+    where 
+        fname = T.unpack $ pageName page
+        p = packageList page
         
 handler :: IO.IOError -> IO ()  
 handler e  
