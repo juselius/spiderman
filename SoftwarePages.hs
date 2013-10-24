@@ -72,9 +72,15 @@ renderUrl (Base x) _
 
 formatPage :: FileNameFormatter-> Page -> Page
 formatPage f page = case page of
-    IndexPage _ _ ps -> page { packageList = map (formatPackage f) ps }
-    VersionPage _ _ ps -> page { package = formatPackage f ps }
-    HelpPage _ _ ps -> page { versionList = map (formatVersion f) ps }
+    IndexPage _ pn ps -> page {
+          pageName = f pn
+        , packageList = map (formatPackage f) ps }
+    VersionPage _ pn p -> page { 
+          pageName = f pn
+        , package = formatPackage f p }
+    HelpPage _ pn vs -> page { 
+          pageName = f pn
+        , versionList = map (formatVersion f) vs }
 
 formatPackage :: FileNameFormatter -> Package -> Package
 formatPackage f p = p { 
@@ -89,8 +95,13 @@ formatPackage f p = p {
 formatVersion :: FileNameFormatter -> Version -> Version
 formatVersion f v = v { 
       helpText = T.pack . rstToHtml . T.unpack . helpText $ v
-    , helpPageHref = f $ helpPageName v 
+    , helpPageHref = x
     } 
+    where 
+        p = helpPageName v 
+        x   | "http" `T.isPrefixOf` p = p
+            | not $ T.null p = f p
+            | otherwise = p 
         
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
@@ -140,7 +151,7 @@ renderVersionPage page =
     T.pack "version"
 
 renderHelpPage page v = 
-    "help"
+    T.pack "help"
 
 helpPageName v = 
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in

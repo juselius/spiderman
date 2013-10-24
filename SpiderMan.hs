@@ -56,7 +56,7 @@ dispatchTemplates :: Flags -> [L.Package] -> IO ()
 dispatchTemplates args pkgs = 
     case format args of
 --         "html" -> writeHtml p
-        "html" -> writePages $ makeHtmlPages page
+        "html" -> writePages $ makeHtmlPages p
 --         "rst" -> writePkgs htmlToRst p
 --         "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
 --         "mas" -> writeMasXml (T.pack $ site args) (T.pack $ url args) page
@@ -65,17 +65,10 @@ dispatchTemplates args pkgs =
         page = IndexPage { 
               pageTitle = makeTitle (T.pack $ category args) 
                 (T.pack $ keyword args) 
-            , pageName = indexFileName args `T.append` outputFileExt args
+            , pageName = indexFileName args 
             , packageList = pkgs
             }
---         p = formatPackageList page pkgs
---         fname = T.unpack . pageName page $ indexFileName args
---         writeHtml = if mainpage args 
---             then writeListingPage fname id
---             else writeSoftwarePages fname id
---         writePkgs = if mainpage args 
---             then writeListingPage fname 
---             else writeSoftwarePages fname 
+        p = formatPage (\f -> urlify f `T.append` outputFileExt args) page
 
 outputFileExt args =
     case format args of
@@ -152,10 +145,9 @@ skipHelpPage v
 
 makeHtmlPages :: Page -> [(FilePath, T.Text)]
 makeHtmlPages page =  case page of 
-    IndexPage _ _ _ -> [(fname, renderIndexPage p)]
+    IndexPage _ _ _ -> [(fname, renderIndexPage page)]
     _ -> undefined
     where
-        p = formatPage (\f -> urlify f `T.append` ".html") page
         fname = T.unpack $ pageName page
 
 writePages :: [(FilePath, T.Text)] -> IO ()
