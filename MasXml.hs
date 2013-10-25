@@ -31,4 +31,4 @@ genMasPackageInfo baseUrl p = xelem "sw_entry" $
     xattr "progName" (displayName p)  <> 
     xattr "version"  (defaultVersionName p) <> 
     xattr "license" (license p) <> 
-    xattr "infoURL" (baseUrl `T.append` packageIndexName p `T.append` ".html") 
+    xattr "infoURL" (baseUrl `T.append` packageIndexName p) 

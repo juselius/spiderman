@@ -15,6 +15,7 @@ module SoftwarePages (
     , sortPackageList
     , rstToHtml
     , htmlToRst
+    , addGititHeaders
     , urlify
     ) where
 
@@ -95,7 +96,7 @@ formatPackage f p = p {
     
 formatVersion :: FileNameFormatter -> Version -> Version
 formatVersion f v = v { 
-      helpText = T.pack . rstToHtml . T.unpack . helpText $ v
+      helpText = rstToHtml . T.unpack . helpText $ v
     , helpPageHref = x
     } 
     where 
@@ -149,7 +150,7 @@ addGititHeaders p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
 -- | Convert a package/version path to a usable url name
 urlify = T.toLower . T.replace "/" "." 
 
-rstToHtml =  P.writeHtmlString P.def . P.readRST P.def 
+rstToHtml = T.pack . P.writeHtmlString P.def . P.readRST P.def 
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 

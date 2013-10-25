@@ -55,11 +55,10 @@ gotoOutdir args = do
 dispatchTemplates :: Flags -> [L.Package] -> IO ()
 dispatchTemplates args pkgs = 
     case format args of
---         "html" -> writeHtml p
-        "html" -> writePages $ makeHtmlPages p
---         "rst" -> writePkgs htmlToRst p
---         "gitit" -> writePkgs (addGititHeaders . htmlToRst) p
---         "mas" -> writeMasXml (T.pack $ site args) (T.pack $ url args) page
+        "html" -> writeHtmlPages p
+        "rst" -> writeRstPages p
+        "gitit" -> writeGititPages p
+        "mas" -> writeMasXml (T.pack $ site args) (T.pack $ url args) page
         _ -> error "Invalid output format!"
     where 
         page = IndexPage { 
@@ -71,14 +70,57 @@ dispatchTemplates args pkgs =
         p = formatPage (\f -> urlify f `T.append` outputFileExt args) page
 
 makeHtmlPages :: Page -> [(FilePath, T.Text)]
-makeHtmlPages page =  case page of 
-    IndexPage _ _ _ -> [(fname, renderPage page)]
-    _ -> undefined
+makeHtmlPages page@(IndexPage _ _ ps) = concat [
+      [makeIndexPage page]
+    , map makeVersionPage ps
+    , concatMap makeHelpPages ps ]
+makeHtmlPages _ = undefined
+
+makeIndexPage :: Page -> (FilePath, T.Text)
+makeIndexPage page@(IndexPage {}) = (fname, renderPage page)
+        where fname = T.unpack $ pageName page
+makeIndexPages _ = undefined
+
+makeVersionPage :: L.Package -> (FilePath, T.Text)
+makeVersionPage p = (T.unpack fname, renderPage vpage)
     where
-        fname = T.unpack $ pageName page
+        fname = L.packageIndexName p
+        pname = L.packageName p
+        vpage = VersionPage pname fname p
+
+makeHelpPages :: L.Package -> [(FilePath, T.Text)]
+makeHelpPages p = filter (\(f, _) -> 
+    not (null f || "http" `isPrefixOf` f)) $
+    map (\ver -> (T.unpack $ fname ver, renderPage $ hpage ver)) v
+    where
+        v = HM.elems $ L.versions p
+        fname = L.helpPageHref 
+        pname = L.fullName 
+        hpage ver = HelpPage (pname ver) (fname ver) p ver
+
+makeRstPages x = map (\(f, p) -> 
+    (f,  htmlToRst p)) $ makeHtmlPages x
 
 writePages :: [(FilePath, T.Text)] -> IO ()
-writePages ps = mapM_ (\(fname, content) -> TIO.writeFile fname content) ps
+writePages = mapM_ (uncurry TIO.writeFile)
+
+writeHtmlPages :: Page -> IO ()
+writeHtmlPages x = writePages $ makeHtmlPages x
+
+writeRstPages :: Page -> IO ()
+writeRstPages x = writePages $ makeRstPages x
+
+writeGititPages :: Page -> IO ()
+writeGititPages x = writePages $ map (\(f, p) -> 
+    (f, addGititHeaders p)) $ makeRstPages x
+
+writeMasXml :: T.Text -> T.Text -> Page -> IO ()
+writeMasXml site baseUrl page = 
+    writeFile fname $ BS.unpack $ renderMasXml site baseUrl p
+    where 
+        fname = T.unpack $ pageName page
+        p = packageList $ formatPage (\f -> 
+            urlify f `T.append` ".hml") page
 
 outputFileExt args =
     case format args of
@@ -89,6 +131,7 @@ outputFileExt args =
         _ -> error "Invalid output format!"
 
 indexFileName args 
+    | format args == "mas" = "software.xml" 
     | null catg && null keyw = "index" 
     | null catg = T.pack keyw 
     | null keyw = T.pack catg 
@@ -153,36 +196,6 @@ skipHelpPage v
     where 
         href = L.helpPageHref v
 
--- writeSoftwarePages :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
--- writeSoftwarePages fname formatter pages = do
---     TIO.writeFile fname (formatter . renderPackageListingPage $ pages)
---     mapM_ (writeVersionPage formatter) pages
---     mapM_ (writeHelpPages formatter) pages
-
--- writeListingPage :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
--- writeListingPage fname formatter page = 
---     TIO.writeFile fname (formatter . renderPackageListingPage $ page)
-
--- writeVersionPage formatter page = 
---     TIO.writeFile (packageVersionFileName page) $ 
---         formatter $ renderVersionPage page 
-
--- writeHelpPages formatter page = 
---     mapM_ (\v -> TIO.writeFile (T.unpack . pageName page $ L.fullName v)
---         (formatter $ renderHelpPage page v)) vers
---     where 
---         v = HM.elems $ L.versions (pagePackage page)
---         vers = if pageName page "" `T.isSuffixOf` "html" 
---             then filter skipHelpPage v 
---             else v
-
-writeMasXml :: T.Text -> T.Text -> Page -> IO ()
-writeMasXml site baseUrl page = 
-    writeFile fname $ BS.unpack $ renderMasXml site baseUrl p
-    where 
-        fname = T.unpack $ pageName page
-        p = packageList page
-        
 handler :: IO.IOError -> IO ()  
 handler e  
     | IO.isDoesNotExistError e =    
