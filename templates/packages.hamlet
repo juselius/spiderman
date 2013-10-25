@@ -1,6 +1,6 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base $ fileT $ pageName page}> #{pageTitle page}
+        <a href=@{Base $ pageName page}> #{pageTitle page}
     <table>
         <tr>
             <td>Program
@@ -15,11 +15,11 @@
                     $if T.null $ helpPageHref (defaultVersion it) 
                         #{moduleName it}
                     $else
-                        <a href=@{Base $ fileT $ helpPageHref (defaultVersion it)}>
+                        <a href=@{Base $ helpPageHref (defaultVersion it)}>
                             #{moduleName it}
                     
                 <td>
-                    <a href=@{Base $ fileT $ packageIndexName it}>
+                    <a href=@{Base $ packageIndexName it}>
                         #{defaultVersionName it}
                 <td>
                     #{description it}

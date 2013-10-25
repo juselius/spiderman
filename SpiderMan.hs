@@ -70,6 +70,16 @@ dispatchTemplates args pkgs =
             }
         p = formatPage (\f -> urlify f `T.append` outputFileExt args) page
 
+makeHtmlPages :: Page -> [(FilePath, T.Text)]
+makeHtmlPages page =  case page of 
+    IndexPage _ _ _ -> [(fname, renderIndexPage page)]
+    _ -> undefined
+    where
+        fname = T.unpack $ pageName page
+
+writePages :: [(FilePath, T.Text)] -> IO ()
+writePages ps = mapM_ (\(fname, content) -> TIO.writeFile fname content) ps
+
 outputFileExt args =
     case format args of
         "html" -> ".html"
@@ -142,16 +152,6 @@ skipHelpPage v
     | otherwise = True   
     where 
         href = L.helpPageHref v
-
-makeHtmlPages :: Page -> [(FilePath, T.Text)]
-makeHtmlPages page =  case page of 
-    IndexPage _ _ _ -> [(fname, renderIndexPage page)]
-    _ -> undefined
-    where
-        fname = T.unpack $ pageName page
-
-writePages :: [(FilePath, T.Text)] -> IO ()
-writePages ps = mapM_ (\(fname, content) -> TIO.writeFile fname content) ps
 
 -- writeSoftwarePages :: FilePath -> (T.Text -> T.Text) -> [Page] -> IO ()
 -- writeSoftwarePages fname formatter pages = do

@@ -128,8 +128,8 @@ tabs = "This is a tab" :: T.Text
 pageTemplate :: Page -> Html -> HtmlUrl Route
 pageTemplate page content = $(hamletFile "templates/page.hamlet")
 
-packageIndexTemplate :: (T.Text -> T.Text) -> Page -> HtmlUrl Route
-packageIndexTemplate fileT page = $(hamletFile "templates/packages.hamlet")
+packageIndexTemplate :: Page -> HtmlUrl Route
+packageIndexTemplate page = $(hamletFile "templates/packages.hamlet")
 -- helpTemplate = $(hamletFile "templates/help.hamlet")
 -- versionsTemplate = $(hamletFile "templates/versions.hamlet")
 
@@ -144,8 +144,7 @@ sitenav = $(hamletFile "templates/sitenav.hamlet")
 renderIndexPage page = 
     T.pack . renderHtml $ pageTemplate page indexP renderUrl
     where 
-        indexP = packageIndexTemplate 
-            (\f -> f `T.append` ".html") page renderUrl
+        indexP = packageIndexTemplate page renderUrl
     
 renderVersionPage page = 
     T.pack "version"
