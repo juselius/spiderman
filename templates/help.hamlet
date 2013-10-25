@@ -4,5 +4,5 @@
     <h4>List of 
         <a href=@{Base $ packageIndexName pkg}>available versions
     <p>
-        #{helpText ver}
+        #{preEscapedToHtml $ helpText ver}
 

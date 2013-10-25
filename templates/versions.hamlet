@@ -5,8 +5,8 @@
         <tr>
         <td>Keywords:
         <td>
-        $forall it <- keywords pkg
-            #{it}
+            $forall it <- keywords pkg
+                #{it}
     <table>
     <tr>
         <td>Version
@@ -15,5 +15,5 @@
             <tr>
                 <td>#{version it}
                 <td>
-                    <a @{Base $ helpPageHref it}>#{fullName it}
+                    <a href=@{Base $ helpPageHref it}>#{fullName it}
 
