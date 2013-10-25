@@ -72,7 +72,7 @@ dispatchTemplates args pkgs =
 
 makeHtmlPages :: Page -> [(FilePath, T.Text)]
 makeHtmlPages page =  case page of 
-    IndexPage _ _ _ -> [(fname, renderIndexPage page)]
+    IndexPage _ _ _ -> [(fname, renderPage page)]
     _ -> undefined
     where
         fname = T.unpack $ pageName page

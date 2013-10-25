@@ -6,12 +6,10 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
--- | Generate HTML from Lmod(ualtor) packageList using HStringTemplates.
+-- | Generate HTML from Lmod packageList using Hamlet
 module SoftwarePages (
       Page(..) 
-    , renderIndexPage
-    , renderVersionPage
-    , renderHelpPage
+    , renderPage
     , formatPackage
     , formatPage
     , sortPackageList
@@ -32,8 +30,8 @@ import Text.Hamlet (hamlet, hamletFile, HtmlUrl)
 import qualified Text.Pandoc as P
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
+import qualified Paths_spiderman as Paths
 import LmodPackage 
-import Paths_spiderman
 
 data Page = 
       IndexPage { 
@@ -49,7 +47,8 @@ data Page =
     | HelpPage {
           pageTitle :: T.Text
         , pageName :: T.Text
-        , versionList :: [Version]
+        , package :: Package
+        , versionInfo :: Version
         }
 
 data Route = Home
@@ -63,9 +62,9 @@ type FileNameFormatter = T.Text -> T.Text
 -- Routes should be configurable from a file
 renderUrl :: Route -> [(T.Text, T.Text)] -> T.Text
 renderUrl Home _ = "/"
-renderUrl BaseCss _ = "/css/custom.css"
-renderUrl PrintCss _ = "/css/print.css"
-renderUrl (Images x) _ = "/img/" `T.append` x 
+renderUrl BaseCss _ = "css/custom.css"
+renderUrl PrintCss _ = "css/print.css"
+renderUrl (Images x) _ = "img/" `T.append` x 
 renderUrl (Base x) _ 
     | "http" `T.isPrefixOf` x = x
     | otherwise = x 
@@ -78,9 +77,10 @@ formatPage f page = case page of
     VersionPage _ pn p -> page { 
           pageName = f pn
         , package = formatPackage f p }
-    HelpPage _ pn vs -> page { 
+    HelpPage _ pn p v -> page { 
           pageName = f pn
-        , versionList = map (formatVersion f) vs }
+        , package = formatPackage f p
+        , versionInfo = formatVersion f v }
 
 formatPackage :: FileNameFormatter -> Package -> Package
 formatPackage f p = p { 
@@ -102,7 +102,38 @@ formatVersion f v = v {
         x   | "http" `T.isPrefixOf` p = p
             | not $ T.null p = f p
             | otherwise = p 
-        
+
+-- | Render the toplevel page template w/ contents
+renderPage page = 
+    T.pack . renderHtml $ pageTemplate page contents renderUrl
+    where contents = case page of
+            IndexPage   _ _ _   -> packageIndexTemplate page renderUrl
+            VersionPage _ _ p   -> versionListTemplate page p renderUrl
+            HelpPage    _ _ p v -> helpTemplate p v renderUrl
+ 
+pageTemplate :: Page -> Html -> HtmlUrl Route
+pageTemplate page content = $(hamletFile "templates/page.hamlet")
+
+packageIndexTemplate :: Page -> HtmlUrl Route
+packageIndexTemplate page = $(hamletFile "templates/packages.hamlet")
+
+versionListTemplate :: Page -> Package -> HtmlUrl Route
+versionListTemplate page pkg = $(hamletFile "templates/versions.hamlet")
+
+helpTemplate :: Package -> Version -> HtmlUrl Route
+helpTemplate pkg ver = $(hamletFile "templates/help.hamlet")
+
+header :: T.Text -> HtmlUrl Route
+header title = $(hamletFile "templates/header.hamlet")
+
+sitenav = $(hamletFile "templates/sitenav.hamlet")
+
+logo = $(hamletFile "templates/logo.hamlet")
+
+footer = $(hamletFile "templates/footer.hamlet")
+
+tabs = "This is a tab" :: T.Text
+
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
         if p == T.empty then "" else T.reverse p
@@ -122,35 +153,6 @@ rstToHtml =  P.writeHtmlString P.def . P.readRST P.def
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
 sortPackageList = sortBy (compare `on` T.toLower . displayName)  
-
-tabs = "This is a tab" :: T.Text
-
-pageTemplate :: Page -> Html -> HtmlUrl Route
-pageTemplate page content = $(hamletFile "templates/page.hamlet")
-
-packageIndexTemplate :: Page -> HtmlUrl Route
-packageIndexTemplate page = $(hamletFile "templates/packages.hamlet")
--- helpTemplate = $(hamletFile "templates/help.hamlet")
--- versionsTemplate = $(hamletFile "templates/versions.hamlet")
-
-logo = $(hamletFile "templates/logo.hamlet")
-footer = $(hamletFile "templates/footer.hamlet")
-
-header :: T.Text -> HtmlUrl Route
-header title = $(hamletFile "templates/header.hamlet")
-
-sitenav = $(hamletFile "templates/sitenav.hamlet")
-
-renderIndexPage page = 
-    T.pack . renderHtml $ pageTemplate page indexP renderUrl
-    where 
-        indexP = packageIndexTemplate page renderUrl
-    
-renderVersionPage page = 
-    T.pack "version"
-
-renderHelpPage page v = 
-    T.pack "help"
 
 helpPageName v = 
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
