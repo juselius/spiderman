@@ -1,8 +1,8 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base pageUrl}>#{pagetitle}
+        <a href=@{Base $ helpPageHref ver}>#{fullName ver}
     <h4>List of 
-        <a href=@{Base versionPageUrl}>available versions
+        <a href=@{Base $ packageIndexName pkg}>available versions
     <p>
-        #{helptext}
+        #{helpText ver}
 

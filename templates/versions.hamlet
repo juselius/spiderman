@@ -1,17 +1,19 @@
 <div #content>
     <h1 .pageTitle>
-        <a href=@{Base pageUrl}>#{pagetitle}
+        <a href=@{Base $ pageName page}>#{pageTitle page}
     <table>
         <tr>
         <td>Keywords:
-        <td>#{keywords}
+        <td>
+        $forall it <- keywords pkg
+            #{it}
     <table>
     <tr>
         <td>Version
         <td>Module
-        $forall it <- versions
+        $forall it <- versions pkg
             <tr>
                 <td>#{version it}
                 <td>
-                    <a @{Base helpPageHref it}>#{fullName it}
+                    <a @{Base $ helpPageHref it}>#{fullName it}
 
