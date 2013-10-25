@@ -89,7 +89,8 @@ formatPackage f p = p {
     , packageIndexName = f $ packageName p 
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
-    , versions = HM.map (formatVersion f) $ versions p
+    , versions = HM.map (formatVersion f) $  -- get rid of "hidden" versions
+        HM.filter (\x -> not ("/." `T.isInfixOf` fullName x)) $ versions p
     }
     
 formatVersion :: FileNameFormatter -> Version -> Version
@@ -107,9 +108,9 @@ formatVersion f v = v {
 renderPage page = 
     T.pack . renderHtml $ pageTemplate page contents renderUrl
     where contents = case page of
-            IndexPage   _ _ _   -> packageIndexTemplate page renderUrl
-            VersionPage _ _ p   -> versionListTemplate page p renderUrl
-            HelpPage    _ _ p v -> helpTemplate p v renderUrl
+            IndexPage {}      -> packageIndexTemplate page renderUrl
+            VersionPage _ _ p -> versionListTemplate page p renderUrl
+            HelpPage _ _ p v  -> helpTemplate p v renderUrl
  
 pageTemplate :: Page -> Html -> HtmlUrl Route
 pageTemplate page content = $(hamletFile "templates/page.hamlet")
