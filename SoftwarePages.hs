@@ -134,8 +134,6 @@ logo = $(hamletFile "templates/logo.hamlet")
 
 footer = $(hamletFile "templates/footer.hamlet")
 
-tabs = "This is a tab" :: T.Text
-
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
         if p == T.empty then "" else T.reverse p

@@ -8,7 +8,6 @@ $doctype 5
         <div #doc3 .yui-t1>
             <div #.yui-main>
                 <div #maincol .yui-b>
-                    #{tabs}
                     #{content}
                     ^{footer}
             <div #sidebar .yui-b first>
