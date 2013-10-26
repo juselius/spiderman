@@ -9,13 +9,18 @@
 -- | Generate HTML from Lmod packageList using Hamlet
 module SoftwarePages (
       Page(..) 
+    , makeHtmlPages
+    , makeRstPages
+    , makeGititPages
+    , makeIndexPage
+    , makeVersionPage
+    , makeHelpPages
     , renderPage
     , formatPackage
     , formatPage
     , sortPackageList
     , rstToHtml
     , htmlToRst
-    , addGititHeaders
     , urlify
     ) where
 
@@ -133,6 +138,39 @@ sitenav = $(hamletFile "templates/sitenav.hamlet")
 logo = $(hamletFile "templates/logo.hamlet")
 
 footer = $(hamletFile "templates/footer.hamlet")
+
+makeHtmlPages :: Page -> [(FilePath, T.Text)]
+makeHtmlPages page@(IndexPage _ _ ps) = concat [
+      [makeIndexPage page]
+    , map makeVersionPage ps
+    , concatMap makeHelpPages ps ]
+makeHtmlPages _ = undefined
+
+makeIndexPage :: Page -> (FilePath, T.Text)
+makeIndexPage page@(IndexPage {}) = (fname, renderPage page)
+        where fname = T.unpack $ pageName page
+makeIndexPage _ = undefined
+
+makeVersionPage :: Package -> (FilePath, T.Text)
+makeVersionPage p = (T.unpack fname, renderPage vpage)
+    where
+        fname = packageIndexName p
+        pname = packageName p
+        vpage = VersionPage pname fname p
+
+makeHelpPages :: Package -> [(FilePath, T.Text)]
+makeHelpPages p = filter (\(f, _) -> 
+    not (null f || "http" `isPrefixOf` f)) $
+    map (\ver -> (T.unpack $ fname ver, renderPage $ hpage ver)) v
+    where
+        v = HM.elems $ versions p
+        fname = helpPageHref 
+        pname = fullName 
+        hpage ver = HelpPage (pname ver) (fname ver) p ver
+
+makeRstPages x = map (\(f, p) -> (f,  htmlToRst p)) $ makeHtmlPages x
+
+makeGititPages x = map (\(f, p) -> (f, addGititHeaders p)) $ makeRstPages x
 
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in

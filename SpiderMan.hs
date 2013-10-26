@@ -69,38 +69,6 @@ dispatchTemplates args pkgs =
             }
         p = formatPage (\f -> urlify f `T.append` outputFileExt args) page
 
-makeHtmlPages :: Page -> [(FilePath, T.Text)]
-makeHtmlPages page@(IndexPage _ _ ps) = concat [
-      [makeIndexPage page]
-    , map makeVersionPage ps
-    , concatMap makeHelpPages ps ]
-makeHtmlPages _ = undefined
-
-makeIndexPage :: Page -> (FilePath, T.Text)
-makeIndexPage page@(IndexPage {}) = (fname, renderPage page)
-        where fname = T.unpack $ pageName page
-makeIndexPages _ = undefined
-
-makeVersionPage :: L.Package -> (FilePath, T.Text)
-makeVersionPage p = (T.unpack fname, renderPage vpage)
-    where
-        fname = L.packageIndexName p
-        pname = L.packageName p
-        vpage = VersionPage pname fname p
-
-makeHelpPages :: L.Package -> [(FilePath, T.Text)]
-makeHelpPages p = filter (\(f, _) -> 
-    not (null f || "http" `isPrefixOf` f)) $
-    map (\ver -> (T.unpack $ fname ver, renderPage $ hpage ver)) v
-    where
-        v = HM.elems $ L.versions p
-        fname = L.helpPageHref 
-        pname = L.fullName 
-        hpage ver = HelpPage (pname ver) (fname ver) p ver
-
-makeRstPages x = map (\(f, p) -> 
-    (f,  htmlToRst p)) $ makeHtmlPages x
-
 writePages :: [(FilePath, T.Text)] -> IO ()
 writePages = mapM_ (uncurry TIO.writeFile)
 
@@ -111,8 +79,7 @@ writeRstPages :: Page -> IO ()
 writeRstPages x = writePages $ makeRstPages x
 
 writeGititPages :: Page -> IO ()
-writeGititPages x = writePages $ map (\(f, p) -> 
-    (f, addGititHeaders p)) $ makeRstPages x
+writeGititPages x = writePages $ makeGititPages x
 
 writeMasXml :: T.Text -> T.Text -> Page -> IO ()
 writeMasXml site baseUrl page = 
@@ -120,7 +87,7 @@ writeMasXml site baseUrl page =
     where 
         fname = T.unpack $ pageName page
         p = packageList $ formatPage (\f -> 
-            urlify f `T.append` ".hml") page
+            urlify f `T.append` ".html") page
 
 outputFileExt args =
     case format args of
@@ -144,8 +111,6 @@ nameOutdir dir filename
     | null dir = takeBaseName filename 
     | otherwise = dir
 
-getFileExt = dropWhile (/= '.')
-    
 makeTitle a b
     | T.null a' = p `T.append` kw
     | a' `T.isPrefixOf` "development" = "Development " `T.append` p `T.append` kw
@@ -170,8 +135,6 @@ filterKeyword x
     | T.null x = id
     | x == "all" = id
     | otherwise = filter (any (T.toLower x `T.isInfixOf`) . L.keywords)
-
-printKeyword = fmap print $ map L.keywords
 
 decodePackages :: BS.ByteString -> IO [L.Package]
 decodePackages ason =
