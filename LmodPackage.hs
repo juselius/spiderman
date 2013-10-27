@@ -40,8 +40,8 @@ data Package = Package
  
 -- | Package version representation
 data Version = Version 
-    { version :: T.Text
-    , fullName :: T.Text
+    { versionSpec :: T.Text
+    , versionName :: T.Text
     , helpText :: T.Text 
     , helpPageHref :: T.Text
     } deriving (Eq, Show, Data, Typeable)
@@ -50,14 +50,15 @@ type RecNo = Int
 
 -- | Packages are packages.
 data Packages = Packages
-    { packages :: [Package]
+    { packages :: HM.HashMap T.Text Package
     , failures :: [(RecNo, String)]
     } deriving(Eq, Show)
 
 instance FromJSON Packages where
   parseJSON (Array a) = do
     pack <- return $ V.toList (V.map fromJSON a) :: Parser [Result Package]
-    let good = map (\(Success x) -> x) $ filter isSuccess pack
+    let good = HM.fromList $ map (\(Success x) -> 
+            (packageName x, x)) $ filter isSuccess pack
         bad = map (\(n, Error x) -> (n, x)) $ filter isFailed (zip [1..] pack)
     return $ Packages good bad
   parseJSON _ = mzero
@@ -85,7 +86,7 @@ instance FromJSON Package where
             v <- o .: "versions" 
             vl <- liftM V.toList $ V.mapM parseJSON v :: Parser [Version]
             return $ HM.fromList $ map (\x -> 
-                (version x, x)) vl :: Parser (HM.HashMap T.Text Version)
+                (versionSpec x, x)) vl :: Parser (HM.HashMap T.Text Version)
         <*> return emptyVersion
     parseJSON _ = mzero 
 

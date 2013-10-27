@@ -96,7 +96,7 @@ formatPackage f p = p {
     , category  = T.toLower . category $ p
     , keywords = map T.toLower $ keywords p 
     , versions = HM.map (formatVersion f) $  -- get rid of "hidden" versions
-        HM.filter (\x -> not ("/." `T.isInfixOf` fullName x)) $ versions p
+        HM.filter (\x -> not ("/." `T.isInfixOf` versionName x)) $ versions p
     }
     
 formatVersion :: FileNameFormatter -> Version -> Version
@@ -165,7 +165,7 @@ makeHelpPages p = filter (\(f, _) ->
     where
         v = HM.elems $ versions p
         fname = helpPageHref 
-        pname = fullName 
+        pname = versionName 
         hpage ver = HelpPage (pname ver) (fname ver) p ver
 
 makeRstPages x = map (\(f, p) -> (f,  htmlToRst p)) $ makeHtmlPages x
@@ -198,7 +198,7 @@ helpPageName v =
         [s, u] -> if s == "Site" then T.pack u else ""  
         [s, a1, u, a2] -> if s == "Site" then T.pack u else ""  
         -- return url to help page to be generated
-        [] -> urlify $ fullName v
+        [] -> urlify $ versionName v
     where 
         t = T.unpack . helpText $ v
         pat = "(Site|Off-site) help:" ++ 

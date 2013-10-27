@@ -13,7 +13,7 @@
         <td>Module
         $forall it <- versions pkg
             <tr>
-                <td>#{version it}
+                <td>#{versionSpec it}
                 <td>
-                    <a href=@{Base $ helpPageHref it}>#{fullName it}
+                    <a href=@{Base $ helpPageHref it}>#{versionName it}
 

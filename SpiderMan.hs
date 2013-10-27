@@ -53,7 +53,10 @@ gotoOutdir args = do
     where dir = nameOutdir (outdir args) (inpfile args)
 
 dispatchTemplates :: Flags -> [L.Package] -> IO ()
-dispatchTemplates args pkgs = 
+dispatchTemplates args pkgs = do
+--     print $ map (\q -> HM.keys $ L.versions q) pkgs
+--     print $ map (\q -> HM.map L.versionName (L.versions q)) pkgs
+--     error "foop"
     case format args of
         "html" -> writeHtmlPages p
         "rst" -> writeRstPages p
@@ -146,7 +149,7 @@ decodePackages ason =
             else return $ goodPackages x
         Nothing -> error "Parsing failed."
 
-goodPackages = sortPackageList . L.packages
+goodPackages p = sortPackageList . HM.elems $ L.packages p
 
 warnFailed flist = init $ foldl (\s (n, w) -> s
     ++ "Record " ++ show n ++ ": "
