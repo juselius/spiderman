@@ -74,7 +74,7 @@ main = do
 
 -- | Dispatch to the correct writer based on the command line
 dispatchTemplates :: Flags -> [L.Package] -> IO ()
-dispatchTemplates args pkgs = do
+dispatchTemplates args pkgs =
     case format args of
         "html" -> writeHtmlPages p
         "rst" -> writeRstPages p

@@ -29,6 +29,7 @@ module SoftwarePages (
 
 import Control.Applicative
 import Control.Monad
+import Control.Arrow (first, second)
 import Data.List
 import Data.Char
 import Data.Function (on)
@@ -183,9 +184,9 @@ filterKeyword x
     | x == "all" = id
     | otherwise = filter (any (T.toLower x `T.isInfixOf`) . keywords)
 
-makeRstPages x = map (\(f, p) -> (f,  htmlToRst p)) $ makeHtmlPages x
+makeRstPages x = map (second htmlToRst) $ makeHtmlPages x
 
-makeGititPages x = map (\(f, p) -> (f, addGititHeaders p)) $ makeRstPages x
+makeGititPages x = map (second addGititHeaders) $ makeRstPages x
 
 trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
