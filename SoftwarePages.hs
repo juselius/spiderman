@@ -22,6 +22,9 @@ module SoftwarePages (
     , rstToHtml
     , htmlToRst
     , urlify
+    , filterPackages
+    , filterCategory
+    , filterKeyword
     ) where
 
 import Control.Applicative
@@ -167,6 +170,18 @@ makeHelpPages p = filter (\(f, _) ->
         fname = helpPageHref 
         pname = versionName 
         hpage ver = HelpPage (pname ver) (fname ver) p ver
+
+filterPackages key cat = filterCategory cat .  filterKeyword key
+
+filterCategory x 
+    | T.null x = id
+    | x == "all" = id
+    | otherwise = filter (\y -> T.toLower x `T.isPrefixOf` category y) 
+
+filterKeyword x 
+    | T.null x = id
+    | x == "all" = id
+    | otherwise = filter (any (T.toLower x `T.isInfixOf`) . keywords)
 
 makeRstPages x = map (\(f, p) -> (f,  htmlToRst p)) $ makeHtmlPages x
 
