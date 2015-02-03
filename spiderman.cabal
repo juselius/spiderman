@@ -39,7 +39,7 @@ library
     , blaze-markup
     , pandoc
     , xmlgen
-    , hamlet
+    , shakespeare
     , regex-posix
 
 executable spiderman
@@ -59,7 +59,7 @@ executable spiderman
     , filepath
     , pandoc
     , xmlgen
-    , hamlet
+    , shakespeare
     , regex-posix
   cpp-options: -DCABAL_BUILD
 
