@@ -85,7 +85,7 @@ instance FromJSON Package where
         <*> pure emptyVersion
         where
             tok = map T.strip . T.splitOn (T.pack ",") . T.toLower
-            tov = HM.fromList . V.toList . V.map (\x ->(versionSpec x, x))
+            tov = HM.fromList . V.toList . V.map (\x -> (versionSpec x, x))
     parseJSON _ = mzero
 
 instance FromJSON Version where
