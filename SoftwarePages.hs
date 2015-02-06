@@ -8,7 +8,7 @@
 
 -- | Generate HTML from Lmod packageList using Hamlet
 module SoftwarePages (
-      Page(..) 
+      Page(..)
     , makeHtmlPages
     , makeRstPages
     , makeGititPages
@@ -41,15 +41,15 @@ import qualified Text.Pandoc as P
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
 import qualified Paths_spiderman as Paths
-import LmodPackage 
+import LmodPackage
 
-data Page = 
-      IndexPage { 
+data Page =
+      IndexPage {
           pageTitle :: T.Text
         , pageName :: T.Text
         , packageList :: [Package]
         }
-    | VersionPage { 
+    | VersionPage {
           pageTitle :: T.Text
         , pageName :: T.Text
         , package :: Package
@@ -67,61 +67,61 @@ data Route = Home
     | Base T.Text
     | Images T.Text
 
-type FileNameFormatter = T.Text -> T.Text 
+type FileNameFormatter = T.Text -> T.Text
 
 -- Routes should be configurable from a file
 renderUrl :: Route -> [(T.Text, T.Text)] -> T.Text
 renderUrl Home _ = "/"
 renderUrl BaseCss _ = "css/custom.css"
 renderUrl PrintCss _ = "css/print.css"
-renderUrl (Images x) _ = "img/" `T.append` x 
-renderUrl (Base x) _ 
+renderUrl (Images x) _ = "img/" `T.append` x
+renderUrl (Base x) _
     | "http" `T.isPrefixOf` x = x
-    | otherwise = x 
+    | otherwise = x
 
 formatPage :: FileNameFormatter-> Page -> Page
 formatPage f page = case page of
     IndexPage _ pn ps -> page {
           pageName = f pn
         , packageList = map (formatPackage f) ps }
-    VersionPage _ pn p -> page { 
+    VersionPage _ pn p -> page {
           pageName = f pn
         , package = formatPackage f p }
-    HelpPage _ pn p v -> page { 
+    HelpPage _ pn p v -> page {
           pageName = f pn
         , package = formatPackage f p
         , versionInfo = formatVersion f v }
 
 formatPackage :: FileNameFormatter -> Package -> Package
-formatPackage f p = p { 
+formatPackage f p = p {
       moduleName = trimPackageName . packageName $ p
-    , defaultVersion = formatVersion f $ getDefaultVersion p 
-    , packageIndexName = f $ packageName p 
+    , defaultVersion = formatVersion f $ getDefaultVersion p
+    , packageIndexName = f $ packageName p
     , category  = T.toLower . category $ p
-    , keywords = map T.toLower $ keywords p 
+    , keywords = map T.toLower $ keywords p
     , versions = HM.map (formatVersion f) $  -- get rid of "hidden" versions
         HM.filter (\x -> not ("/." `T.isInfixOf` versionName x)) $ versions p
     }
-    
+
 formatVersion :: FileNameFormatter -> Version -> Version
-formatVersion f v = v { 
+formatVersion f v = v {
       helpText = rstToHtml . T.unpack . helpText $ v
     , helpPageHref = x
-    } 
-    where 
-        p = helpPageName v 
+    }
+    where
+        p = helpPageName v
         x   | "http" `T.isPrefixOf` p = p
             | not $ T.null p = f p
-            | otherwise = p 
+            | otherwise = p
 
 -- | Render the toplevel page template w/ contents
-renderPage page = 
+renderPage page =
     T.pack . renderHtml $ pageTemplate page contents renderUrl
     where contents = case page of
             IndexPage {}      -> packageIndexTemplate page renderUrl
             VersionPage _ _ p -> versionListTemplate page p renderUrl
             HelpPage _ _ p v  -> helpTemplate p v renderUrl
- 
+
 pageTemplate :: Page -> Html -> HtmlUrl Route
 pageTemplate page content = $(hamletFile "templates/page.hamlet")
 
@@ -163,23 +163,23 @@ makeVersionPage p = (T.unpack fname, renderPage vpage)
         vpage = VersionPage pname fname p
 
 makeHelpPages :: Package -> [(FilePath, T.Text)]
-makeHelpPages p = filter (\(f, _) -> 
+makeHelpPages p = filter (\(f, _) ->
     not (null f || "http" `isPrefixOf` f)) $
     map (\ver -> (T.unpack $ fname ver, renderPage $ hpage ver)) v
     where
         v = HM.elems $ versions p
-        fname = helpPageHref 
-        pname = versionName 
+        fname = helpPageHref
+        pname = versionName
         hpage ver = HelpPage (pname ver) (fname ver) p ver
 
 filterPackages key cat = filterCategory cat .  filterKeyword key
 
-filterCategory x 
+filterCategory x
     | T.null x = id
     | x == "all" = id
-    | otherwise = filter (\y -> T.toLower x `T.isPrefixOf` category y) 
+    | otherwise = filter (\y -> T.toLower x `T.isPrefixOf` category y)
 
-filterKeyword x 
+filterKeyword x
     | T.null x = id
     | x == "all" = id
     | otherwise = filter (any (T.toLower x `T.isInfixOf`) . keywords)
@@ -192,31 +192,31 @@ trimPackageName pkg =
     let p = T.takeWhile (/= '/') . T.reverse $ pkg in
         if p == T.empty then "" else T.reverse p
 
--- | Remove first part of a package path, up until first '/' 
-cleanPath x 
+-- | Remove first part of a package path, up until first '/'
+cleanPath x
     | T.any (=='/') x = T.tail . T.dropWhile (/='/') $ x
     | otherwise = x
 
 addGititHeaders p = "---\ntoc: no\ntitle:\n...\n\n" `T.append` p
 
 -- | Convert a package/version path to a usable url name
-urlify = T.toLower . T.replace "/" "." 
+urlify = T.toLower . T.replace "/" "."
 
-rstToHtml = T.pack . P.writeHtmlString P.def . P.readRST P.def 
+rstToHtml = T.pack . P.writeHtmlString P.def . P.readRST P.def
 
 htmlToRst =  T.pack . P.writeRST P.def . P.readHtml P.def . T.unpack
 
-sortPackageList = sortBy (compare `on` T.toLower . displayName)  
+sortPackageList = sortBy (compare `on` T.toLower . displayName)
 
-helpPageName v = 
+helpPageName v =
     let (a, b, c, g) = t =~ pat :: (String, String, String, [String]) in
     case g of
-        [s, u] -> if s == "Site" then T.pack u else ""  
-        [s, a1, u, a2] -> if s == "Site" then T.pack u else ""  
+        [s, u] -> if s == "Site" then T.pack u else ""
+        [s, a1, u, a2] -> if s == "Site" then T.pack u else ""
         -- return url to help page to be generated
         [] -> urlify $ versionName v
-    where 
+    where
         t = T.unpack . helpText $ v
-        pat = "(Site|Off-site) help:" ++ 
+        pat = "(Site|Off-site) help:" ++
             "*(<a .*>)* *(http://[^ \t]*) *(</a>)*$" :: String
 
