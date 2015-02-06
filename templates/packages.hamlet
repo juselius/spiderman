@@ -1,4 +1,4 @@
-<div #content>
+<div #tabmenu_result>
     <h1 .pageTitle>
         <a href=@{Base $ pageName page}> #{pageTitle page}
     <table>
@@ -17,7 +17,7 @@
                     $else
                         <a href=@{Base $ helpPageHref (defaultVersion it)}>
                             #{moduleName it}
-                    
+
                 <td>
                     <a href=@{Base $ packageIndexName it}>
                         #{defaultVersionName it}

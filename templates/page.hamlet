@@ -5,11 +5,16 @@ $doctype 5
 <html>
     ^{header $ pageTitle page}
     <body>
-        <div #doc3 .yui-t1>
-            <div #.yui-main>
+        <div #menubgr> 
+            <div .m_main>
+            <div .m_sub>
+        <div #header>
+            ^{sitenav}
+        <div #wrapper>
+            <div #side>
                 <div #maincol .yui-b>
+                    <div #tabmenu .tabmenu>
+                        ^{logo}
                     #{content}
-                    ^{footer}
-            <div #sidebar .yui-b first>
-                ^{logo}
-                ^{sitenav}
+        <div #footer>
+            ^{footer}

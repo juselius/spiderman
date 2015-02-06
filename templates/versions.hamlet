@@ -3,17 +3,21 @@
         <a href=@{Base $ pageName page}>#{pageTitle page}
     <table>
         <tr>
-        <td>Keywords:
+        <td>
+            Keywords:
         <td>
             $forall it <- keywords pkg
                 #{it}
     <table>
-    <tr>
-        <td>Version
-        <td>Module
-        $forall it <- versions pkg
-            <tr>
-                <td>#{versionSpec it}
-                <td>
-                    <a href=@{Base $ helpPageHref it}>#{versionName it}
+        <tr>
+            <td>
+                Version
+            <td>
+                Module
+            $forall it <- versions pkg
+                <tr>
+                    <td>
+                        #{versionSpec it}
+                    <td>
+                        <a href=@{Base $ helpPageHref it}>#{versionName it}
 

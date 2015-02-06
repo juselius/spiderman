@@ -1,26 +1,37 @@
-<div .sitenav>
-    <fieldset>
-        <legend>Modules
-            <ul>
-                <li>
-                    <a href=@{Home}>Main page
-                <li>Categories
-                    <ul>
-                        <li>
-                            <a href=@{Base ""}/>All
-                        <li>
-                            <a href=@{Base "application.html"}>Applications
-                        <li>
-                            <a href=@{Base "development.html"}>Development
-                        <li>
-                            <a href=@{Base "library.html"}>Libraries
-                <li>Topics
-                    <ul>
-                        <li>
-                            <a href=@{Base "chemistry.html"}>Chemsiry
-                        <li>
-                            <a href=@{Base "physics.html"}>Physics
-                        <li>
-                            <a href=@{Base "math.html"}>Mathematics
-                        <li>
-                            <a href=@{Base "earth.html"}>Earth sciences
+<div #newtabs .newtabs>
+    <ul>
+        <li>
+            <a href=@{Home}>Main page
+        <li>
+            <a href=@{Base ""}/>All
+        <li>
+            <a href=@{Base "application.html"}>Applications
+        <li>
+            <a href=@{Base "development.html"}>Development
+        <li>
+            <a href=@{Base "library.html"}>Libraries
+<div #subtabs .subtabs>
+    <ul>
+       <li>
+            <a href=@{Base "chemistry.html"}>Chemistry
+        <li>
+            <a href=@{Base "physics.html"}>Physics
+        <li>
+            <a href=@{Base "mathematics.html"}>Mathematics
+        <li>
+            <a href=@{Base "life.html"}>Life sciences
+        <li>
+            <a href=@{Base "material.html"}>Material sciences
+        <li>
+            <a href=@{Base "earth.html"}>Earth sciences
+        <li>
+            <a href=@{Base "medical.html"}>Medicine
+        <li>
+            <a href=@{Base "linguistics.html"}>Linguistics
+        <li>
+            <a href=@{Base "visualization.html"}>Visualization
+        <li>
+            <a href=@{Base "cfd.html"}>CFD
+        <li>
+            <a href=@{Base "development.html"}>Development
+

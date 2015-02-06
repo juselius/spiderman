@@ -1,3 +1,3 @@
 <div #logo>
     <a href=@{Home} alt="site logo" title="Go to top page">
-        <img src=@{Images "logo.png"} />
+        <img src=@{Images "logo_blue.png"} />
