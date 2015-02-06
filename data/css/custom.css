@@ -3,3 +3,140 @@
 
 /* Put your custom style modifications here: */
 
+#header {    margin: 0 auto;    width: 960px;}
+#wrapper {    text-align: left;    margin: 0 auto;    padding: 0px;    border:0;    width: 960px;}
+#side {    margin: 0 auto;    max-width: 960px;   }
+
+#menubgr{left:0px;text-align: left; position: absolute;  width: 100%; }
+#menubgr .m_main {left:0px;text-align: left;height: 40px; width: 100%; color: #FFF; background-color: #000; background-image: url('../img/top_banner.png'); background-position: right;background-repeat: no-repeat;}
+#menubgr .m_sub {left:0px;text-align: left;height: 40px; width: 100%; color: #000; background-color: #eae7e3;}
+
+#newtabs { margin: 0; padding: 0; width: 100%; height: 40px; color: #FFF; z-index: 1; position: relative; display: block;}
+#newtabs ul { margin: 0px; padding: 0; position: relative; display: block; top: -4px;    font-size: 1.167em;    line-height:normal;    list-style:none;    float: left; padding-left: 0px;    width: 100%;}
+#newtabs li {    float:left;    padding: 16px 17px 0px 0px;}
+#newtabs .righttab a{    right: 10pt;    position: absolute;}
+#newtabs a {  float:left;    display:block;    line-height: 23px;    text-decoration:none;    color:#FFFFFF;}
+#newtabs .active a {    color:#FFFFFF;    border-bottom: 5px solid #f17613;}
+#newtabs .larger{ display: block;    font-size: 120%;}
+
+#subtabs {    font-size: 80%;    margin: 0;    padding: 0;    width: 100%;    height: 30px;    color:#000;    background-color: transparent;}
+#subtabs ul {    font-size: 1.167em;    margin:0;    padding:0;    top:3px;    list-style:none;    padding-left: 0px;
+    float: left;    line-height:normal;    position: relative;}
+#subtabs li {    float:left;    margin:0;    padding:0px 0px 0px 0px;}
+#subtabs a{    float:left;    display:block;    padding:5px 15px 4px 0px;    text-decoration:none;    color:#000;    background-color:#eae7e3;}
+#subtabs .active a {    color:#f17613;    padding-bottom:5px;}
+#subtabs_left{    float: left;    position: absolute;}
+#subtabs_right{    float: right;    height: 25px;}
+#subtabs ul.righttab{ left: 673px;}
+
+/******************************************************************************
+* Tabmenu
+*******************************************************************************/
+#tabmenu {
+    margin: 0;
+    padding: 6px 0;
+    margin-left: 0;
+    border-bottom: 1px solid #cccccc;
+    list-style-type: none;
+    text-align: left; /*set to left, center, or right to align the menu as desired*/
+    clear: both;
+}
+#tabmenu li {
+    display: inline;
+    margin: 0;
+    padding: 0 1px 0 0;
+    -webkit-border-top-left-radius: 20px;
+    -webkit-border-top-right-radius: 20px;
+    -moz-border-radius-topleft: 20px;
+    -moz-border-radius-topright: 20px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+#tabmenu li a {
+    font-size: 1.3em;
+    text-decoration: none;
+    padding: 7px 7px;
+    margin-right: 3px;
+    border: 1px solid #cccccc;
+    -webkit-border-top-left-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    -moz-border-radius-topright: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom: none;
+    background-color: #EAE7E3;
+    color: #000000;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-weight: bold;
+    top: 1px;
+}
+#tabmenu li a:visited {
+    color: #000000;
+}
+#tabmenu li a:hover {
+    color: #000000;
+}
+#tabmenu li a:active {
+    color: #000000;
+}
+#tabmenu li.selected a{ /*selected tab effect*/
+    padding-top: 8px;
+    background-color: #fff;
+    font-weight: bold;
+    color: #000000;
+    border-color: #cccccc;
+}
+div#tabmenu_result {
+    border: 1px solid #cccccc;
+    width: 960px;
+    padding: 20px;
+}
+#tabmenu li.selected { /*ny*/
+    position: relative;
+    z-index: 1000000;
+    top: 2px;
+}
+
+ul.tabs{margin: 1em 1em 1em 2em;}
+ul.tabs li{    background: transparent; display:block;}
+ul.tabs li.selected{border-bottom: none;}
+
+table {border: 1pt solid #cccccc;}
+td {border-right: 1pt solid #cccccc; }
+thead {border-bottom: 1pt solid #cccccc; background-color:#eae7e3; }
+
+.userbox{min-height: 26px;}
+
+#footerwrapper {text-align: left;    margin: 0 auto;    padding: 0px;    border:0;    width: 960px;}
+#footerwrapper ul{list-style-type: disc;}
+.footerbody {width: 100%;font-family: Arial, Regular;font-size: 1em; background-color: #eae7e3;
+    line-height: 11pt;padding-top: 25px;padding-bottom: 25px; margin-top:25px; height: 100px;}
+
+.footerdivblank {float: left;width: 70px; height:100%;}
+.footerdiv {float: left;width: 250px;padding-right: 15px;padding-left: 0px;background-color: #eae7e3; height:100%;}
+.footerdivwithborder {float: left;width: 250px;background-color: #eae7e3;border-left-width: thin;border-left-style: solid;
+    border-left-color: #cccccc;padding-right: 15px;padding-left: 15px; height:100%;}
+.footerrightdiv {float: left;width: 250px;background-color: #eae7e3;border-left-width: thin;border-left-style: solid;
+    border-left-color: #cccccc;padding-left: 15px; height:100%; text-align: right;}
+
+#editform{width:70%;}
+
+.markupHelp code{border: none;}
+div.markupHelp pre{font-size: 100%;}
+pre { border: 1pt solid #cccccc; background-color: #eae7e3;  overflow: auto;    overflow-y: hidden; padding: 3mm;}
+code { line-height: 120%; }
+
+
+/******************************************************************************
+* Some non-IE fixes
+*******************************************************************************/
+
+html>body div#tabmenu_result {width: 920px;}
+
+
+
+
+
+
