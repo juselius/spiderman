@@ -7,7 +7,7 @@ RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-updates main restricte
 RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-security main restricted universe multiverse' >> /etc/apt/sources.list
 RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-backports main restricted universe multiverse' >> /etc/apt/sources.list
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y haskell-platform git software-properties-common pkg-config
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git software-properties-common pkg-config
 
 # I tried lots of different GHC versions and all the others had incompatible `base` package
 RUN add-apt-repository ppa:hvr/ghc
