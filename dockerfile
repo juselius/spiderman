@@ -28,6 +28,5 @@ RUN mkdir /opt/spiderman
 WORKDIR /opt/spiderman
 RUN git clone https://github.com/juselius/spiderman.git .
 RUN cabal v1-update
-# adding these requirements to `spiderman.cabal` didn't work
-RUN cabal v1-install --global "texmath==0.6.6.1" "Cabal<3" "pandoc==1.12.4.2" "HStringTemplate>0.3.1" "async<2.2" .
+RUN cabal v1-install --global .
 
