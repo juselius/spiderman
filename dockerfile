@@ -9,10 +9,11 @@ RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-backports main restric
 RUN echo 'deb http://ppa.launchpad.net/hvr/ghc/ubuntu eoan main' >> /etc/apt/sources.list
 RUN apt-get update
 # I tried lots of different GHC versions and all the others had incompatible `base` package
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3 cabal-install-head
 
 RUN ln -s /opt/ghc/7.6.3/bin/ghc /usr/bin/ghc
 RUN ln -s /opt/ghc/7.6.3/bin/ghc-pkg /usr/bin/ghc-pkg
+RUN ln -s /opt/cabal/bin/cabal /usr/bin/cabal
 
 # unsupported argument --hash-size
 # there's probably a better way to tell cabal not to use gold but I don't care
