@@ -145,4 +145,4 @@ RUN cabal v1-install --global \
     'zlib==0.5.4.2' \
     .
 
-ENTRYPOINT "/usr/local/bin/spiderman"
+ENTRYPOINT ["/usr/local/bin/spiderman"]
