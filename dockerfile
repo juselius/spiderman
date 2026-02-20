@@ -28,9 +28,9 @@ RUN mkdir /opt/spiderman
 WORKDIR /opt/spiderman
 RUN git clone https://github.com/juselius/spiderman.git .
 RUN cabal v1-update
-
 RUN cabal v1-install --global \
-    'Cabal<3' \
+    # for some reason Cabal 1.20.0.4 and Cabal 2.0.1.1 both get installed
+    'Cabal==2.0.1.1' \
     'HStringTemplate==0.7.3' \
     'HTTP==4000.2.23' \
     'aeson==0.7.0.4' \
@@ -107,6 +107,8 @@ RUN cabal v1-install --global \
     'regex-pcre-builtin==0.94.5.8.8.35' \
     'regex-posix==0.95.2' \
     'resourcet==1.1.3.3' \
+    # cabal says it can't find any package by this name
+    # but it was included in the output from `cabal freeze`
     # 'rts==1.0' \
     'scientific==0.2.0.2' \
     'semigroups==0.20' \
@@ -141,3 +143,5 @@ RUN cabal v1-install --global \
     'zip-archive==0.2.3.7' \
     'zlib==0.5.4.2' \
     .
+
+ENTRYPOINT "/usr/local/bin/spiderman"
