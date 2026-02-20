@@ -28,6 +28,7 @@ RUN mkdir /opt/spiderman
 WORKDIR /opt/spiderman
 RUN git clone https://github.com/juselius/spiderman.git .
 RUN cabal v1-update
+# Adding these requirements to `spiderman.cabal` and `cabal.config` didn't work
 RUN cabal v1-install --global \
     # for some reason Cabal 1.20.0.4 and Cabal 2.0.1.1 both get installed
     'Cabal==2.0.1.1' \
