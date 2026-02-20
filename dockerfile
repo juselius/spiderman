@@ -1,11 +1,11 @@
 FROM ubuntu:eoan
+
 # ubuntu 18.04, 16.04, 14.04, 12.04 all have broken `cabal`, "failed to parse .cabal file"
 # GHC launchpad provides GHC 7.6.3 for eoan
 echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan main restricted universe multiverse' > /etc/apt/sources.list
 echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-updates main restricted universe multiverse' >> /etc/apt/sources.list
 echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-security main restricted universe multiverse' >> /etc/apt/sources.list
 echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-backports main restricted universe multiverse' >> /etc/apt/sources.list
-
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y haskell-platform git software-properties-common pkg-config
 
