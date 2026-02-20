@@ -11,8 +11,8 @@ RUN apt-get update
 # I tried lots of different GHC versions and all the others had incompatible `base` package
 RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3
 
-RUN rm /usr/bin/ghc && ln -s /opt/ghc/7.6.3/bin/ghc /usr/bin/ghc
-RUN rm /usr/bin/ghc-pkg && ln -s /opt/ghc/7.6.3/bin/ghc-pkg /usr/bin/ghc-pkg
+RUN ln -s /opt/ghc/7.6.3/bin/ghc /usr/bin/ghc
+RUN ln -s /opt/ghc/7.6.3/bin/ghc-pkg /usr/bin/ghc-pkg
 
 # unsupported argument --hash-size
 # there's probably a better way to tell cabal not to use gold but I don't care
