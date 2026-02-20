@@ -6,13 +6,11 @@ RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan main restricted univer
 RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-updates main restricted universe multiverse' >> /etc/apt/sources.list
 RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-security main restricted universe multiverse' >> /etc/apt/sources.list
 RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-backports main restricted universe multiverse' >> /etc/apt/sources.list
+RUN echo 'deb http://ppa.launchpad.net/hvr/ghc/ubuntu eoan main' >> /etc/apt/sources.list
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git software-properties-common pkg-config
-
 # I tried lots of different GHC versions and all the others had incompatible `base` package
-RUN add-apt-repository ppa:hvr/ghc
-RUN apt-get update
-RUN apt-get install -y ghc-7.6.3
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3
+
 RUN rm /usr/bin/ghc && ln -s /opt/ghc/7.6.3/bin/ghc /usr/bin/ghc
 RUN rm /usr/bin/ghc-pkg && ln -s /opt/ghc/7.6.3/bin/ghc-pkg /usr/bin/ghc-pkg
 
