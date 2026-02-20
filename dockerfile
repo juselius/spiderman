@@ -9,7 +9,7 @@ RUN echo 'deb http://old-releases.ubuntu.com/ubuntu/ eoan-backports main restric
 RUN echo 'deb http://ppa.launchpad.net/hvr/ghc/ubuntu eoan main' >> /etc/apt/sources.list
 RUN apt-get update
 # I tried lots of different GHC versions and all the others had incompatible `base` package
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3 cabal-install-2.4
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y git pkg-config ghc-7.6.3 cabal-install-2.4 zlib1g-dev
 
 RUN ln -s /opt/ghc/7.6.3/bin/ghc /usr/bin/ghc
 RUN ln -s /opt/ghc/7.6.3/bin/ghc-pkg /usr/bin/ghc-pkg
@@ -27,7 +27,7 @@ RUN mkdir -p /root/.cabal/bin
 RUN mkdir /opt/spiderman
 WORKDIR /opt/spiderman
 RUN git clone https://github.com/juselius/spiderman.git .
-RUN cabal update
+RUN cabal v1-update
 # adding these requirements to `spiderman.cabal` didn't work
 RUN cabal v1-install --global "texmath==0.6.6.1" "Cabal<3" "pandoc==1.12.4.2" "HStringTemplate>0.3.1" .
 
